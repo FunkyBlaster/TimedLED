@@ -1,14 +1,18 @@
+<!-- This contains the basic layout
+	 of the dynamic webpage we're 
+	 constructing -->
 <html>
 <!--FUNCTIONCALL writeStartForm -->
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
+	<!-- Set page background gradient & backup color -->
 	body {
     	background-color: #cccccc;
-    	/* Change page BG color here */
-  		/*background-image: linear-gradient(#e10000, #800000, #400000);*/
+    	<!-- Change page BG color here -->
   		background-image: linear-gradient(#e10000, #008000, #0036c9);
 	}
+	<!-- Font for all normal text on page -->
 	p {
 		font-family: Verdana, Arial, Times;
 		font-size: 1.2em;
@@ -18,27 +22,26 @@
 	#clock {
 		font-size: 2.5em;
 	}
-	/* SELECT BOXES */
+	<!-- SELECT BOXES -->
 	select {
 		width: 10%;
     	padding: 10px;
    		border: 1px solid black;
     	border-radius: 4px;
-    	/* Change box BG color here */
-    	/* OLD COLOR: #d2d2d2 */
+    	<!-- Change box BG color here -->
     	background-color: #dfdfdf;
     	text-align: center;
 	}
-	/* CSS for Submit box */
+	<!-- CSS for Submit box -->
 	.submit {
 		width: 5%;
 		height: 3%;
 		border: 1px solid black;
     	border-radius: 4px;
     	/* Change box BG color here */
-    	/* OLD COLOR: #d2d2d2 */
     	background-color: #dfdfdf;
 	}
+	<!-- Align the submit button to the center -->
 	#submitDiv {
 		text-align: center;
 	}
@@ -61,7 +64,7 @@
 		width: 15%;
 	}
 	
-		/* CSS FOR MOBILE DEVICES */
+		<!-- CSS FOR MOBILE DEVICES -->
 	@media screen and (max-width: 480px) {
 		select {
 			width: 25%;

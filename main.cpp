@@ -1,3 +1,10 @@
+/*
+ * This class keeps track of the system time, start time,
+ * end time, and time zone and their associated ASCII representations.
+ * In addition, this class also handles NTP server and on-board
+ * RTC synchronization, data serialization for the dynamic webpage,
+ * and determining if LEDs should be active or not.
+ */
 #include <autoupdate.h>
 #include <cstring>
 #include <ctype.h>
@@ -28,11 +35,13 @@ char * timeZoneASCII;
 char * prevTimeZone;
 char timeBuf[80];
 char serialBuf[80];
+const char syncBuf[21] = " (Time Sync Failed)\0";
 const int ticksInOneMonth = TICKS_PER_MONTH;
 const int ticksInOneHour  = TICKS_PER_HOUR;
 int NTPSyncCounter= ticksInOneMonth;
 int RTCSyncCounter= ticksInOneHour;
 
+BOOL sysTimeOutOfSync;
 BOOL LEDsPowered;
 BOOL NTPSyncSuccessful;
 BOOL RTCFromSystemSetSuccessful;
@@ -54,6 +63,22 @@ char * getCurSysTimeASCII(int fd) {
 	if(timeBuf[0] == '0') {
 		for(int i = 0; i < 79; i++) {
 			timeBuf[i] = timeBuf[i+1];
+		}
+	}
+	/*
+	 * If system time is out of sync, append
+	 * "out of sync message" to end of string
+	 */
+	if( sysTimeOutOfSync )  {
+		for(int i = 0; i < 79; i++) {
+			//when we hit the null terminator
+			if( timeBuf[i] == 0 ) {
+				for(int x = 0; x < 21; x++) {
+					timeBuf[i] = syncBuf[x];
+					i++;
+				}
+				i = 79;
+			}
 		}
 	}
 	return timeBuf;
@@ -254,13 +279,13 @@ void UserMain(void * pd) {
     currentEndTimeStruct = currentSysTimeStructGMT;
 
     while( 1 ) {
-    	if( NTPSyncCounter >= ticksInOneMonth ) {
+    	if( NTPSyncCounter >= ticksInOneMonth || sysTimeOutOfSync == TRUE ) {
     		//Sync RTC to NTP server pool once a month
     		NTPSyncSuccessful = SyncSystemTimeNTP();
     		RTCFromSystemSetSuccessful = RTCSetRTCfromSystemTime();
     		NTPSyncCounter = 0;
     	}
-    	if( RTCSyncCounter >= ticksInOneHour ) {
+    	if( RTCSyncCounter >= ticksInOneHour || sysTimeOutOfSync == TRUE ) {
     		//Once an hour, sync the system time to the RTC
     		SystemFromRTCSetSuccessful = RTCSetSystemFromRTCTime();
     		RTCSyncCounter = 0;
@@ -289,6 +314,7 @@ void UserMain(void * pd) {
     		}
     		else J2[21] = 0;
     	}
+    	else sysTimeOutOfSync = TRUE;
 
     	NTPSyncCounter++;
     	RTCSyncCounter++;

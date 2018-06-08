@@ -1,3 +1,9 @@
+/*
+ * This header file establishes which functions
+ * index.htm needs to have access to. Nearly all
+ * of said functions relate to retrieving ASCII
+ * strings of updated data.
+ */
 #ifndef HTMLVARS_H_
 #define HTMLVARS_H_
 

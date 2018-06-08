@@ -1,3 +1,9 @@
+/*
+ * This class handles all the data input by the
+ * user and submitted via a POST form. It formats
+ * the data and passes it to various functions
+ * in main.cpp.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <basictypes.h>
@@ -17,10 +23,7 @@ char startForm[MAX_BUF_LEN];
  * 3 - endHr,   4 - endMin,   5 - endAmPm, 6 - time zone
  */
 int desiredTimeInput[7];
-/*
- * This class could use some optimization, notably around formatData()
- * Also add support for more timezones, only have base U.S. timezones rn
- */
+
 extern "C" {
 void writeStartForm( int sock, PCSTR url );
 }

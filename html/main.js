@@ -1,3 +1,7 @@
+/*
+ * Update the system clock on the primary I/O page (index.htm)
+ * every two seconds
+ */
 function updateClock() {
 	var clock = document.getElementById("clock");
 	var url = "clockData.html";
