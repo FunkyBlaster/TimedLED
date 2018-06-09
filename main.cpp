@@ -97,6 +97,12 @@ char * getCurStartTimeASCII(int fd) {
 	return timeBuf;
 }
 
+/*
+ *
+ * @param fd - handle to the network socket connection
+ *
+ * @return
+ */
 char * getCurEndTimeASCII(int fd) {
 	//Same as current system function, but for end time
 	memset(&timeBuf, 0, 80);
@@ -119,6 +125,14 @@ char * getCurTimeZoneASCII(int fd) {
 	}
 }
 
+/*
+ * Set the desired start (LED=ON) time
+ *
+ * @param fd - handle to the network socket connection
+ * @param hours - The hour value of the new time
+ * @param min - The minute value of the new time
+ * @param ampm - AM/PM flag (0 = AM, 1 = PM)
+ */
 void setCurStartTime(int fd, int hours, int min, int ampm) {
 	/*
 	 * 61 is null value set by formatData() if a value was not
@@ -160,6 +174,14 @@ void setCurStartTime(int fd, int hours, int min, int ampm) {
 	}
 }
 
+/*
+ * Set the desired end (LED=OFF) time
+ *
+ * @param fd - handle to the network socket connection
+ * @param hours - The hour value of the new time
+ * @param min - The minute value of the new time
+ * @param ampm - AM/PM flag (0 = AM, 1 = PM)
+ */
 void setCurEndTime(int fd, int hours, int min, int ampm) {
 	/*
 	 * 61 is null value set by formatData() if a value was not
@@ -201,13 +223,27 @@ void setCurEndTime(int fd, int hours, int min, int ampm) {
 	}
 }
 
+/*
+ * Called with input from POST form, sets
+ * the tz variable and its ASCII equivalent
+ *
+ * @param fd - handle to the network socket connection
+ * @param tz - pointer to tz string literal
+ * @param tzASCII - pointer to ASCII representation of tz
+ */
 void setTimeZone(int fd, char * tz, char * tzASCII) {
-	//Set timezone variable and ASCII equivalent
 	tzsetchar(tz);
 	timeZoneASCII = tzASCII;
 	prevTimeZone = tz;
 }
 
+/*
+ * Method to be called by clockData.html
+ *
+ * @param fd - handle to the network socket connection
+ *
+ * @return buffer of current system time in ASCII form
+ */
 char * SerializeClockData(int fd)
 {
 	memset(&serialBuf, 0, 80);
@@ -217,25 +253,26 @@ char * SerializeClockData(int fd)
 
 void RegisterPost();
 
+/*
+ * Sync the system time with the NTP server pool,
+ * return TRUE if pass, FALSE if fail
+ */
 BOOL SyncSystemTimeNTP() {
-	/*
-	 * Sync the system time with the NTP server pool,
-	 * return TRUE if pass, FALSE if fail
-	 */
+
 	BOOL retVal = SetTimeNTPFromPool();
 	currentSysTime = time(0);
 	return retVal;
 }
 
+/*
+ *  Accuracy to the second not important;
+ * 	return values:
+ * 	0 - null;
+ * 	1 - less than;
+ * 	2 - equal to;
+ * 	3 - greater than;
+ */
 int timeObjEval(struct tm * one, struct tm * two) {
-	/*
-	 *  Accuracy to the second not important;
-	 * 	return values:
-	 * 	0 - null;
-	 * 	1 - less than;
-	 * 	2 - equal to;
-	 * 	3 - greater than;
-	 */
 	int oneMin  = one->tm_min;
 	int oneHour = one->tm_hour;
 	int twoMin  = two->tm_min;
