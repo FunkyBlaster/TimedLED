@@ -4,27 +4,66 @@
  *  Created on: Jun 11, 2018
  *      Author: Aztec
  */
-
 #include "led.h"
-
-#include <stdio.h>
-#include <basictypes.h>
-
 #include "ledStrip.h"
 
-extern LedStrip currentStripSPI;
+#include <stdio.h>
 
+static LedStrip * strip;
+
+/*********************************************
+ * Constructor for Led instance              *
+ *********************************************/
+Led::Led() {
+	strip = strip->GetLedStrip();
+}
+
+/*********************************************
+ * Destructor for Led instance               *
+ *********************************************/
+Led::~Led() {
+
+}
+
+/***********************************************
+ * Sets the color values of this individual LED
+ *
+ * @param r - red value
+ * @param g - green value
+ * @param b - blue value
+ ***********************************************/
 void Led::setColorValue( BYTE r, BYTE g, BYTE b ) {
 	redVal = r;
-	blueVal = g;
-	greenVal = b;
+	greenVal = g;
+	blueVal = b;
 }
 
-void Led::setLedValueCurrentColor(int i) {
-
+/*************************************************
+ * Sets the values of this individual LED to white
+ *************************************************/
+void Led::setColorlessValue() {
+	redVal = 127;
+	greenVal = 127;
+	blueVal = 127;
+	iprintf("Set to white.\r\n");
 }
 
+/**************************************
+ * Writes color values to SPI
+ **************************************/
 void Led::writeLedValues() {
-	BYTE colors[3] = { redVal, greenVal, blueVal };
-	currentStripSPI.WriteToDSPI( colors, 3 );
+	BYTE colors[3] = { greenVal, redVal, blueVal };
+	strip->WriteToDSPI( colors, 3 );
+}
+
+BYTE Led::getColorValues(BYTE id) {
+	switch(id) {
+	case 0:
+		return greenVal;
+	case 1:
+		return redVal;
+	case 2:
+		return blueVal;
+	}
+	return 0;
 }

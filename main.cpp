@@ -314,9 +314,15 @@ void UserMain(void * pd) {
     RegisterPost();
 
     //Initialize the pins we're using for the LED strip
-    strip = LedStrip::GetLedStrip();
+    iprintf("Starting strip initialization.\r\n");
+    strip = strip->GetLedStrip();
+    iprintf("GetLedStrip PASS. Starting initLedStrip.\r\n");
     strip->initLedStrip();
-
+    iprintf("initLedStrip PASS. Starting setStripWhite.\r\n");
+    strip->setStripWhite();
+    iprintf("setStripWhite PASS. Starting turnStripOff.\r\n");
+    strip->turnStripOff();
+    iprintf("Strip initialized.\r\n");
     LEDsPowered = FALSE;
 
     //Initialize all of the time variables to non-null values
@@ -355,11 +361,14 @@ void UserMain(void * pd) {
     		if( timeObjEval(sys,s) == 3 || timeObjEval(sys,s) == 2 ) {
     			//IF ( system time < end time )
     			if( timeObjEval(sys,e) == 1 ) {
-    				J2[21] = 1;
+    				iprintf("Time window good.\r\n");
+    				strip->setStripWhite();
+    				iprintf("Strip on.\r\n");
+    				LEDsPowered = TRUE;
     			}
-    			else J2[21] = 0;
     		}
-    		else J2[21] = 0;
+    		strip->turnStripOff();
+    		LEDsPowered = FALSE;
     	}
     	else sysTimeOutOfSync = TRUE;
 
