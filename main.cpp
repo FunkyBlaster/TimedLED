@@ -9,7 +9,7 @@
 #include <cstring>
 #include <ctype.h>
 #include <dhcpclient.h>
-#include "main.h"
+#include <dspi.h>
 #include <nbtime.h>
 #include <NetworkDebug.h>
 #include <pins.h>
@@ -19,6 +19,10 @@
 #include <startnet.h>
 #include <stdio.h>
 #include <time.h>
+
+#include "main.h"
+#include "led.h"
+#include "ledStrip.h"
 
 #define TICKS_PER_MONTH 2592000;
 #define TICKS_PER_HOUR 3600;
@@ -40,6 +44,8 @@ const int ticksInOneMonth = TICKS_PER_MONTH;
 const int ticksInOneHour  = TICKS_PER_HOUR;
 int NTPSyncCounter= ticksInOneMonth;
 int RTCSyncCounter= ticksInOneHour;
+extern const int ledCount;
+LedStrip * strip;
 
 BOOL sysTimeOutOfSync;
 BOOL LEDsPowered;
@@ -242,7 +248,7 @@ void setTimeZone(int fd, char * tz, char * tzASCII) {
  *
  * @param fd - handle to the network socket connection
  *
- * @return buffer of current system time in ASCII form
+ * @return - buffer of current system time in ASCII form
  */
 char * SerializeClockData(int fd)
 {
@@ -254,8 +260,9 @@ char * SerializeClockData(int fd)
 void RegisterPost();
 
 /*
- * Sync the system time with the NTP server pool,
- * return TRUE if pass, FALSE if fail
+ * Sync the system time with the NTP server pool
+ *
+ * @return - TRUE on success, FALSE on fail
  */
 BOOL SyncSystemTimeNTP() {
 
@@ -266,11 +273,15 @@ BOOL SyncSystemTimeNTP() {
 
 /*
  *  Accuracy to the second not important;
- * 	return values:
- * 	0 - null;
- * 	1 - less than;
- * 	2 - equal to;
- * 	3 - greater than;
+ *
+ * 	@param one - pointer to first time struct to compare
+ * 	@param two - pointer to second time struct to compare
+ *
+ * 	@return - (one) ___ (two)
+ * 		0 - null;
+ * 		1 - less than;
+ * 		2 - equal to;
+ * 		3 - greater than;
  */
 int timeObjEval(struct tm * one, struct tm * two) {
 	int oneMin  = one->tm_min;
@@ -302,11 +313,10 @@ void UserMain(void * pd) {
     StartHTTP();
     RegisterPost();
 
-    putleds(0xFF);
-
     //Initialize the pins we're using for the LED strip
-    J2[21].function(PINJ2_25_GPIO);
-    J2[21] = 0;
+    strip = LedStrip::GetLedStrip();
+    strip->initLedStrip();
+
     LEDsPowered = FALSE;
 
     //Initialize all of the time variables to non-null values
