@@ -7,9 +7,9 @@
 
 #ifndef LED_H_
 #define LED_H_
-#pragma once
 
 #include <basictypes.h>
+
 
 class Led {
 public:
@@ -19,7 +19,8 @@ public:
 	void setColorlessValue();
 	void setLedColorValue(int i , BYTE r, BYTE g, BYTE b);
 	void writeLedValues();
-	BYTE getColorValues(BYTE id);
+	void setLedOff();
+	int getColorValues(BYTE id);
 
 private:
 	BYTE redVal;

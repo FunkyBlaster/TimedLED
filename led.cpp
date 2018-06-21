@@ -9,43 +9,51 @@
 
 #include <stdio.h>
 
-static LedStrip * strip;
-
 /*********************************************
  * Constructor for Led instance              *
  *********************************************/
 Led::Led() {
-	strip = strip->GetLedStrip();
+	redVal = 0;
+	greenVal = 0;
+	blueVal = 0;
 }
 
 /*********************************************
  * Destructor for Led instance               *
  *********************************************/
 Led::~Led() {
-
+	delete this;
 }
 
 /***********************************************
  * Sets the color values of this individual LED
  *
- * @param r - red value
- * @param g - green value
- * @param b - blue value
+ * @param r - red value (0-127)
+ * @param g - green value (0-127)
+ * @param b - blue value (0-127)
  ***********************************************/
 void Led::setColorValue( BYTE r, BYTE g, BYTE b ) {
-	redVal = r;
-	greenVal = g;
-	blueVal = b;
+	redVal = r | 0x80;
+	greenVal = g | 0x80;
+	blueVal = b | 0x80;
 }
 
 /*************************************************
  * Sets the values of this individual LED to white
  *************************************************/
 void Led::setColorlessValue() {
-	redVal = 127;
-	greenVal = 127;
-	blueVal = 127;
-	iprintf("Set to white.\r\n");
+	redVal = 0x7F;
+	greenVal = 0x7F;
+	blueVal = 0x7F;
+}
+
+/*************************************************
+ * Sets the values of this individual LED to OFF
+ *************************************************/
+void Led::setLedOff() {
+	redVal = 0x80;
+	greenVal = 0x80;
+	blueVal = 0x80;
 }
 
 /**************************************
@@ -53,17 +61,17 @@ void Led::setColorlessValue() {
  **************************************/
 void Led::writeLedValues() {
 	BYTE colors[3] = { greenVal, redVal, blueVal };
-	strip->WriteToDSPI( colors, 3 );
+	LedStrip::GetLedStrip()->WriteToDSPI( colors, 3 );
 }
 
-BYTE Led::getColorValues(BYTE id) {
+int Led::getColorValues(BYTE id) {
 	switch(id) {
 	case 0:
-		return greenVal;
+		return (int)greenVal;
 	case 1:
-		return redVal;
+		return (int)redVal;
 	case 2:
-		return blueVal;
+		return (int)blueVal;
 	}
 	return 0;
 }

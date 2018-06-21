@@ -15,13 +15,13 @@
 #include <pins.h>
 #include <predef.h>
 #include <rtc.h>
+#include <smarttrap.h>
 #include <sstream>
 #include <startnet.h>
 #include <stdio.h>
 #include <time.h>
 
 #include "main.h"
-#include "led.h"
 #include "ledStrip.h"
 
 #define TICKS_PER_MONTH 2592000;
@@ -45,7 +45,7 @@ const int ticksInOneHour  = TICKS_PER_HOUR;
 int NTPSyncCounter= ticksInOneMonth;
 int RTCSyncCounter= ticksInOneHour;
 extern const int ledCount;
-LedStrip * strip;
+LedStrip *strip;
 
 BOOL sysTimeOutOfSync;
 BOOL LEDsPowered;
@@ -310,19 +310,15 @@ void UserMain(void * pd) {
     GetDHCPAddressIfNecessary();
     OSChangePrio(MAIN_PRIO);
     EnableAutoUpdate();
+    EnableSmartTraps();
     StartHTTP();
     RegisterPost();
 
-    //Initialize the pins we're using for the LED strip
-    iprintf("Starting strip initialization.\r\n");
+    //Initialize the LED strip
     strip = strip->GetLedStrip();
-    iprintf("GetLedStrip PASS. Starting initLedStrip.\r\n");
     strip->initLedStrip();
-    iprintf("initLedStrip PASS. Starting setStripWhite.\r\n");
-    strip->setStripWhite();
-    iprintf("setStripWhite PASS. Starting turnStripOff.\r\n");
     strip->turnStripOff();
-    iprintf("Strip initialized.\r\n");
+
     LEDsPowered = FALSE;
 
     //Initialize all of the time variables to non-null values
@@ -361,14 +357,22 @@ void UserMain(void * pd) {
     		if( timeObjEval(sys,s) == 3 || timeObjEval(sys,s) == 2 ) {
     			//IF ( system time < end time )
     			if( timeObjEval(sys,e) == 1 ) {
-    				iprintf("Time window good.\r\n");
-    				strip->setStripWhite();
-    				iprintf("Strip on.\r\n");
     				LEDsPowered = TRUE;
     			}
+    			else {
+    				LEDsPowered = FALSE;
+    			}
     		}
-    		strip->turnStripOff();
-    		LEDsPowered = FALSE;
+    		else {
+    			LEDsPowered = FALSE;
+    		}
+    		if( LEDsPowered == TRUE ) {
+    			strip->setStripWhite();
+    		}
+    		else {
+    			strip->turnStripOff();
+    		}
+
     	}
     	else sysTimeOutOfSync = TRUE;
 
