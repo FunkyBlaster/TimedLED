@@ -17,7 +17,6 @@ public:
 	~Led();
 	void setColorValue(BYTE r, BYTE g, BYTE b);
 	void setColorlessValue();
-	void setLedColorValue(int i , BYTE r, BYTE g, BYTE b);
 	void writeLedValues();
 	void setLedOff();
 	int getColorValues(BYTE id);
