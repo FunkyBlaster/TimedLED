@@ -1,14 +1,12 @@
-/*
- * Update the system clock on the primary I/O page (index.htm)
- * every two seconds
- */
+/*******************************************************************************
+ * Update the system clock on the primary I/O page (index.htm)				   *
+ * every two seconds (by default, can change refresh rate - see documentation) *
+ *******************************************************************************/
 function updateClock() {
 	var clock = document.getElementById("clock");
 	var url = "clockData.html";
 	var req;
 	var data;
-	
-	console.log(url);
 	
 	if( window.XMLHttpRequest ) {
 		req = new XMLHttpRequest();
@@ -30,5 +28,4 @@ function updateClock() {
 		}
 		req.send(null);
 	}
-	
 }

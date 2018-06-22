@@ -9,61 +9,68 @@
 
 #include <stdio.h>
 
-/*********************************************
- * Constructor for Led instance              *
- *********************************************/
+/****************************************
+ * @brief Constructor for Led instance  *
+ ****************************************/
 Led::Led() {
 	redVal = 0;
 	greenVal = 0;
 	blueVal = 0;
 }
 
-/*********************************************
- * Destructor for Led instance               *
- *********************************************/
+/****************************************
+ * @brief Destructor for Led instance   *
+ ****************************************/
 Led::~Led() {
 	delete this;
 }
 
-/***********************************************
- * Sets the color values of this individual LED
- *
- * @param r - red value (0-127)
- * @param g - green value (0-127)
- * @param b - blue value (0-127)
- ***********************************************/
+/*******************************************************
+ * @brief Sets the color values of this individual LED *
+ *											   		   *
+ * @param r - red value (0-127)				    	   *
+ * @param g - green value (0-127)			    	   *
+ * @param b - blue value (0-127)			    	   *
+ *******************************************************/
 void Led::setColorValue( BYTE r, BYTE g, BYTE b ) {
 	redVal = r | 0x80;
 	greenVal = g | 0x80;
 	blueVal = b | 0x80;
 }
 
-/*************************************************
- * Sets the values of this individual LED to white
- *************************************************/
+/**********************************************************
+ * @brief Sets the values of this individual LED to white *
+ **********************************************************/
 void Led::setColorlessValue() {
 	redVal = 0x7F;
 	greenVal = 0x7F;
 	blueVal = 0x7F;
 }
 
-/*************************************************
- * Sets the values of this individual LED to OFF
- *************************************************/
+/*********************************************************
+ * @brief Sets the values of this individual LED to OFF  *
+ *********************************************************/
 void Led::setLedOff() {
 	redVal = 0x80;
 	greenVal = 0x80;
 	blueVal = 0x80;
 }
 
-/**************************************
- * Writes color values to SPI
- **************************************/
+/******************************************
+ * @brief Writes color values to SPI 	  *
+ * 										  *
+ * @note - With this LED strip you have	  *
+ * 		   to push the colors on as GRB,  *
+ * 		   as opposed to RGB - don't fix. *
+ ******************************************/
 void Led::writeLedValues() {
 	BYTE colors[3] = { greenVal, redVal, blueVal };
 	LedStrip::GetLedStrip()->WriteToDSPI( colors, 3 );
 }
 
+/********************************************************
+ * @brief Returns color values of this LED (debugging)  *
+ ********************************************************/
 int Led::getColorValues(BYTE id) {
 	switch(id) {
 	case 0:
