@@ -92,7 +92,7 @@ void tzToInt(int sock, std::string input) {
 
 /*******************************************************************
  * @brief Takes raw data from HTML form and formats                *
- * 		  it and places it into desiredTimeInput                   *
+ *        it and places it into desiredTimeInput                   *
  *                                                                 *
  * @param fd - handle to network socket                            *
  * @param dataPtr - pointer to raw data, passed by MyDoPost(...)   *

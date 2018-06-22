@@ -253,7 +253,7 @@ void setCurEndTime(int fd, int hours, int min, int ampm) {
 
 /************************************************************
  * @brief Called with input from POST form, sets            *
- * 		  the tz variable and its ASCII equivalent          *
+ *        the tz variable and its ASCII equivalent          *
  *                                                          *
  * @param fd - handle to the network socket connection      *
  * @param tz - pointer to tz string literal                 *
@@ -293,18 +293,18 @@ BOOL SyncSystemTimeNTP() {
 	return retVal;
 }
 
-/***********************************************************
- *  @brief Accuracy to the second not important;           *
- *                                                         *
- * 	@param one - pointer to first time struct to compare   *
- * 	@param two - pointer to second time struct to compare  *
- *                                                         *
- * 	@return - (one) ___ (two)                              *
- * 	          0 - null;                                    *
- *            1 - less than;                               *
- *            2 - equal to;                                *
- *            3 - greater than;                            *
- ***********************************************************/
+/**********************************************************
+ * @brief Accuracy to the second not important;           *
+ *                                                        *
+ * @param one - pointer to first time struct to compare   *
+ * @param two - pointer to second time struct to compare  *
+ *                                                        *
+ * @return - (one) ___ (two)                              *
+ *            0 - null;                                   *
+ *            1 - less than;                              *
+ *            2 - equal to;                               *
+ *            3 - greater than;                           *
+ **********************************************************/
 int timeObjEval(struct tm * one, struct tm * two) {
 	int oneMin  = one->tm_min;
 	int oneHour = one->tm_hour;
