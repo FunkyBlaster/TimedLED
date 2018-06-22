@@ -19,6 +19,7 @@
 char startForm[MAX_BUF_LEN];
 
 /*
+ * desiredTimeInput Indexes:
  * 0 - startHr, 1 - startMin, 2 - startAmPm
  * 3 - endHr,   4 - endMin,   5 - endAmPm, 6 - time zone
  */
@@ -32,6 +33,12 @@ void writeStartForm( int sock, PCSTR url ) {
 	writestring( sock, startForm );
 }
 
+/********************************************
+ * @brief Pass time zone to main.cpp		*
+ * 											*
+ * @param sock - handle to network socket	*
+ * @param input - time zone string			*
+ ********************************************/
 void tzToInt(int sock, std::string input) {
 	/*
 	 * input variable comes from POST timezone selection;
@@ -83,6 +90,13 @@ void tzToInt(int sock, std::string input) {
 
 }
 
+/*
+ * @brief Takes raw data from HTML form and formats
+ * 		  it and places it into desiredTimeInput
+ *
+ * @param fd - handle to network socket
+ * @param dataPtr - pointer to raw data, passed by MyDoPost(...)
+ */
 void formatData(int fd, char * dataPtr) {
 	//set desiredTimeInput to pre-determined null value (61)
 	for(int i = 0; i <= 6; i++) desiredTimeInput[i] = NULL_VAL;
