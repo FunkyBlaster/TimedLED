@@ -37,7 +37,7 @@ LedStrip::~LedStrip() {
  * Writes provided bytes to DSPI.            *
  *                                           *
  * @param bytePtr  - pointer to data         *
- * 					 to write to SPI         *
+ *                   to write to SPI         *
  * @param numBytes - num bytes to write      *
  *********************************************/
 void LedStrip::WriteToDSPI( PBYTE bytePtr, int numBytes ) {

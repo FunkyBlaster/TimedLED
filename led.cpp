@@ -27,10 +27,10 @@ Led::~Led() {
 
 /*******************************************************
  * @brief Sets the color values of this individual LED *
- *											   		   *
- * @param r - red value (0-127)				    	   *
- * @param g - green value (0-127)			    	   *
- * @param b - blue value (0-127)			    	   *
+ *                                                     *
+ * @param r - red value (0-127)                        *
+ * @param g - green value (0-127)                      *
+ * @param b - blue value (0-127)                       *
  *******************************************************/
 void Led::setColorValue( BYTE r, BYTE g, BYTE b ) {
 	redVal = r | 0x80;
@@ -57,11 +57,11 @@ void Led::setLedOff() {
 }
 
 /******************************************
- * @brief Writes color values to SPI 	  *
- * 										  *
+ * @brief Writes color values to SPI      *
+ *                                        *
  * @note - With this LED strip you have	  *
- * 		   to push the colors on as GRB,  *
- * 		   as opposed to RGB - don't fix. *
+ *         to push the colors on as GRB,  *
+ *         as opposed to RGB - don't fix. *
  ******************************************/
 void Led::writeLedValues() {
 	BYTE colors[3] = { greenVal, redVal, blueVal };

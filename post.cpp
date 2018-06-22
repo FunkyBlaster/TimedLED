@@ -34,10 +34,10 @@ void writeStartForm( int sock, PCSTR url ) {
 }
 
 /********************************************
- * @brief Pass time zone to main.cpp		*
- * 											*
- * @param sock - handle to network socket	*
- * @param input - time zone string			*
+ * @brief Pass time zone to main.cpp        *
+ *                                          *
+ * @param sock - handle to network socket   *
+ * @param input - time zone string          *
  ********************************************/
 void tzToInt(int sock, std::string input) {
 	/*
@@ -90,13 +90,13 @@ void tzToInt(int sock, std::string input) {
 
 }
 
-/*
- * @brief Takes raw data from HTML form and formats
- * 		  it and places it into desiredTimeInput
- *
- * @param fd - handle to network socket
- * @param dataPtr - pointer to raw data, passed by MyDoPost(...)
- */
+/*******************************************************************
+ * @brief Takes raw data from HTML form and formats                *
+ * 		  it and places it into desiredTimeInput                   *
+ *                                                                 *
+ * @param fd - handle to network socket                            *
+ * @param dataPtr - pointer to raw data, passed by MyDoPost(...)   *
+ *******************************************************************/
 void formatData(int fd, char * dataPtr) {
 	//set desiredTimeInput to pre-determined null value (61)
 	for(int i = 0; i <= 6; i++) desiredTimeInput[i] = NULL_VAL;

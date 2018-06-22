@@ -59,10 +59,10 @@ extern "C" {
 
 /**********************************************************
  * @brief Get ASCII representation of stored system time  *
- *														  *
- * @param fd - handle to the network socket connection 	  *
- *													   	  *
- * @return - ASCII string of system time			   	  *
+ *                                                        *
+ * @param fd - handle to the network socket connection    *
+ *                                                        *
+ * @return - ASCII string of system time                  *
  **********************************************************/
 char * getCurSysTimeASCII(int fd) {
 	/*
@@ -99,10 +99,10 @@ char * getCurSysTimeASCII(int fd) {
 
 /*********************************************************
  * @brief Get ASCII representation of stored start time  *
- *													   	 *
- * @param fd - handle to the network socket connection 	 *
- *													   	 *
- * @return - ASCII string of start time			   	   	 *
+ *                                                       *
+ * @param fd - handle to the network socket connection   *
+ *                                                       *
+ * @return - ASCII string of start time                  *
  *********************************************************/
 char * getCurStartTimeASCII(int fd) {
 	//Same as current system function, but for start time
@@ -119,10 +119,10 @@ char * getCurStartTimeASCII(int fd) {
 
 /*******************************************************
  * @brief Get ASCII representation of stored end time  *
- *													   *
+ *                                                     *
  * @param fd - handle to the network socket connection *
- *													   *
- * @return - ASCII string of end time				   *
+ *                                                     *
+ * @return - ASCII string of end time                  *
  *******************************************************/
 char * getCurEndTimeASCII(int fd) {
 	//Same as current system function, but for end time
@@ -139,10 +139,10 @@ char * getCurEndTimeASCII(int fd) {
 
 /*******************************************************
  * @brief Get ASCII representation of stored time zone *
- *													   *
+ *                                                     *
  * @param fd - handle to the network socket connection *
- *													   *
- * @return - ASCII string of time zone				   *
+ *                                                     *
+ * @return - ASCII string of time zone                 *
  *******************************************************/
 char * getCurTimeZoneASCII(int fd) {
 	if( timeZoneASCII != 0 ) {
@@ -154,12 +154,12 @@ char * getCurTimeZoneASCII(int fd) {
 }
 
 /*******************************************************
- * @brief Set the desired start (LED=ON) time		   *
- *													   *
+ * @brief Set the desired start (LED=ON) time          *
+ *                                                     *
  * @param fd - handle to the network socket connection *
- * @param hours - The hour value of the new time	   *
- * @param min - The minute value of the new time	   *
- * @param ampm - AM/PM flag (0 = AM, 1 = PM)		   *
+ * @param hours - The hour value of the new time       *
+ * @param min - The minute value of the new time       *
+ * @param ampm - AM/PM flag (0 = AM, 1 = PM)           *
  *******************************************************/
 void setCurStartTime(int fd, int hours, int min, int ampm) {
 	/*
@@ -203,12 +203,12 @@ void setCurStartTime(int fd, int hours, int min, int ampm) {
 }
 
 /********************************************************
- * @brief Set the desired end (LED=OFF) time			*
- *														*
- * @param fd - handle to the network socket connection	*
- * @param hours - The hour value of the new time		*
- * @param min - The minute value of the new time		*
- * @param ampm - AM/PM flag (0 = AM, 1 = PM)			*
+ * @brief Set the desired end (LED=OFF) time            *
+ *                                                      *
+ * @param fd - handle to the network socket connection  *
+ * @param hours - The hour value of the new time        *
+ * @param min - The minute value of the new time        *
+ * @param ampm - AM/PM flag (0 = AM, 1 = PM)            *
  ********************************************************/
 void setCurEndTime(int fd, int hours, int min, int ampm) {
 	/*
@@ -252,12 +252,12 @@ void setCurEndTime(int fd, int hours, int min, int ampm) {
 }
 
 /************************************************************
- * @brief Called with input from POST form, sets			*
- * 		  the tz variable and its ASCII equivalent			*
- *															*
- * @param fd - handle to the network socket connection		*
- * @param tz - pointer to tz string literal					*
- * @param tzASCII - pointer to ASCII representation of tz	*
+ * @brief Called with input from POST form, sets            *
+ * 		  the tz variable and its ASCII equivalent          *
+ *                                                          *
+ * @param fd - handle to the network socket connection      *
+ * @param tz - pointer to tz string literal                 *
+ * @param tzASCII - pointer to ASCII representation of tz   *
  ************************************************************/
 void setTimeZone(int fd, char * tz, char * tzASCII) {
 	tzsetchar(tz);
@@ -266,10 +266,10 @@ void setTimeZone(int fd, char * tz, char * tzASCII) {
 }
 
 /*********************************************************
- * @brief Method to be called by clockData.html			 *
- *														 *
- * @param fd - handle to the network socket connection	 *
- *														 *
+ * @brief Method to be called by clockData.html          *
+ *                                                       *
+ * @param fd - handle to the network socket connection   *
+ *                                                       *
  * @return - buffer of current system time in ASCII form *
  *********************************************************/
 char * SerializeClockData(int fd)
@@ -283,8 +283,8 @@ void RegisterPost();
 
 /*********************************************************
  * @brief Sync the system time with the NTP server pool  *
- *														 *
- * @return - TRUE on success, FALSE on fail				 *
+ *                                                       *
+ * @return - TRUE on success, FALSE on fail              *
  *********************************************************/
 BOOL SyncSystemTimeNTP() {
 
@@ -294,16 +294,16 @@ BOOL SyncSystemTimeNTP() {
 }
 
 /***********************************************************
- *  @brief Accuracy to the second not important;	       *
- *														   *
+ *  @brief Accuracy to the second not important;           *
+ *                                                         *
  * 	@param one - pointer to first time struct to compare   *
  * 	@param two - pointer to second time struct to compare  *
- *														   *
- * 	@return - (one) ___ (two)							   *
- * 			0 - null;									   *
- * 			1 - less than;								   *
- * 			2 - equal to;								   *
- * 			3 - greater than;							   *
+ *                                                         *
+ * 	@return - (one) ___ (two)                              *
+ * 	          0 - null;                                    *
+ *            1 - less than;                               *
+ *            2 - equal to;                                *
+ *            3 - greater than;                            *
  ***********************************************************/
 int timeObjEval(struct tm * one, struct tm * two) {
 	int oneMin  = one->tm_min;
