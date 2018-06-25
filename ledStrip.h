@@ -21,14 +21,15 @@ public:
 	static LedStrip * GetLedStrip();
 	void WriteToDSPI(PBYTE bytePtr, int numBytes);
 	BOOL initLedStrip();
-	void setStripColor(BYTE r, BYTE g, BYTE b);
+	void setStripColor(uint8_t r, uint8_t g, uint8_t b);
 	void setStripWhite();
-	void setLedValue(int i, BYTE r, BYTE g, BYTE b);
+	void modifyStripBrightness(uint8_t brightPercent);
+	void setLedValue(int i, uint8_t r, uint8_t g, uint8_t b);
 	void writeLedStrip();
 	void turnStripOff();
 
 private:
-	BYTE clearBytes[2] = {0,0};
+	uint8_t clearBytes[2] = {0,0};
 	Led ledStrip[ledCount];
 	static LedStrip *currentStripSPI;
 };

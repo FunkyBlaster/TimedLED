@@ -13,9 +13,9 @@
 
 LedStrip* LedStrip::currentStripSPI;
 
-/*********************************************
- * Initialize pins needed for DSPI           *
- *********************************************/
+/***********************************************
+ * @brief Initialize pins needed for DSPI      *
+ ***********************************************/
 LedStrip::LedStrip() {
 //	iprintf("constructor\r\n");
 	J2[25].function( PINJ2_25_DSPI1_SCK );
@@ -26,30 +26,30 @@ LedStrip::LedStrip() {
 	DSPIInit( DEFAULT_DSPI_MODULE, 2000000, 0x8, 0x0F, 0x0F, 0, 0, TRUE, 0, 0 );
 }
 
-/*********************************************
- * LedStrip destructor                       *
- *********************************************/
+/***********************************************
+ * @brief LedStrip destructor                  *
+ ***********************************************/
 LedStrip::~LedStrip() {
 	delete currentStripSPI;
 }
 
-/*********************************************
- * Writes provided bytes to DSPI.            *
- *                                           *
- * @param bytePtr  - pointer to data         *
- *                   to write to SPI         *
- * @param numBytes - num bytes to write      *
- *********************************************/
+/***********************************************
+ * @brief Writes provided bytes to DSPI.       *
+ *                                             *
+ * @param bytePtr  - pointer to data           *
+ *                   to write to SPI           *
+ * @param numBytes - num bytes to write        *
+ ***********************************************/
 void LedStrip::WriteToDSPI( PBYTE bytePtr, int numBytes ) {
 	DSPIStart( DEFAULT_DSPI_MODULE, bytePtr, NULL, numBytes, NULL);
 	while( !DSPIdone( DEFAULT_DSPI_MODULE )) {}
 }
 
-/*********************************************
- * Returns pointer to LedStripSPI.           *
- *                                           *
- * @return - pointer to currentStripSPI      *
- *********************************************/
+/***********************************************
+ * @brief Returns pointer to LedStripSPI.      *
+ *                                             *
+ * @return - pointer to currentStripSPI        *
+ ***********************************************/
 LedStrip* LedStrip::GetLedStrip() {
 	if( currentStripSPI == NULL ) {
 //		iprintf("current strip is null\r\n");
@@ -59,12 +59,12 @@ LedStrip* LedStrip::GetLedStrip() {
 	return currentStripSPI;
 }
 
-/*********************************************
- * Initializes the led strip (sends two      *
- * clear bits via SPI).                      *
- *                                           *
- * @return - TRUE if pass, FALSE if fail     *
- *********************************************/
+/***********************************************
+ * @brief Initializes the led strip (sends     *
+ *        two clear bits via SPI).             *
+ *                                             *
+ * @return - TRUE if pass, FALSE if fail       *
+ ***********************************************/
 BOOL LedStrip::initLedStrip() {
 	if( currentStripSPI == NULL ) {
 		return FALSE;
@@ -75,42 +75,52 @@ BOOL LedStrip::initLedStrip() {
 	return TRUE;
 }
 
-/*********************************************
- * Sets the color value of a single LED.     *
- *                                           *
- * @param i - index of LED                   *
- * @param r - red value                      *
- * @param g - green value                    *
- * @param b - blue value                     *
- *********************************************/
-void LedStrip::setLedValue(int i, BYTE r, BYTE g, BYTE b) {
+/***********************************************
+ * @brief Sets color value of a single LED.    *
+ *                                             *
+ * @param i - index of LED                     *
+ * @param r - red value                        *
+ * @param g - green value                      *
+ * @param b - blue value                       *
+ ***********************************************/
+void LedStrip::setLedValue(int i, uint8_t r, uint8_t g, uint8_t b) {
 	ledStrip[i].setColorValue(r,g,b);
-	writeLedStrip();
 }
 
 
-/*********************************************
- * Sets the color value of the whole strip.  *
- *                                           *
- * @param r - red value                      *
- * @param g - green value                    *
- * @param b - blue value                     *
- *********************************************/
-void LedStrip::setStripColor(BYTE r, BYTE g, BYTE b) {
+/***************************************************
+ * @brief Sets the color value of the whole strip. *
+ *                                                 *
+ * @param r - red value                            *
+ * @param g - green value                          *
+ * @param b - blue value                           *
+ ***************************************************/
+void LedStrip::setStripColor(uint8_t r, uint8_t g, uint8_t b) {
 	for( int i = 0; i < ledCount; i++ ) {
 		ledStrip[i].setColorValue( r, g, b );
 	}
-	writeLedStrip();
 }
 
 /*********************************************
- * Sets LEDs on the strip to white.          *
+ * @brief Sets LEDs on the strip to white.   *
  *********************************************/
 void LedStrip::setStripWhite() {
 	for( int i = 0; i < ledCount; i++ ) {
 		ledStrip[i].setColorlessValue();
 	}
-	writeLedStrip();
+}
+
+/**************************************************
+ * @brief Sets the brightness value of the strip. *
+ *        Call after setting colors and before    *
+ *        writeLedStrip().                        *
+ *                                                *
+ * @param brightPercent - % brightness (0-100)    *
+ **************************************************/
+void LedStrip::modifyStripBrightness(uint8_t brightPercent) {
+	for( int i = 0; i < ledCount; i++ ) {
+		ledStrip[i].setColorlessValue();
+	}
 }
 
 /*********************************************

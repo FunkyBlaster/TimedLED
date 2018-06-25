@@ -32,7 +32,6 @@ struct tm currentSysTimeStructGMT;
 struct tm currentSysTimeStructLocal;
 struct tm currentStartTimeStruct;
 struct tm currentEndTimeStruct;
-struct tm compareTimeStruct;
 
 const char * AppName="Time-Activated LEDs";
 char * timeZoneASCII;
@@ -368,36 +367,41 @@ void UserMain(void * pd) {
     	 * update HTML time variable and check for time match
     	 */
     	if( NTPSyncSuccessful == TRUE && RTCFromSystemSetSuccessful == 0 ) {
-
-    		currentSysTime = time(0);
-    		gmtime_r(&currentSysTime, &currentSysTimeStructGMT);
-    		localtime_r(&currentSysTime, &currentSysTimeStructLocal);
-    		struct tm * sys = &currentSysTimeStructLocal;
-    		struct tm * s = &currentStartTimeStruct;
-    		struct tm * e = &currentEndTimeStruct;
-    		//IF( system time >= start time)
-    		if( timeObjEval(sys,s) == 3 || timeObjEval(sys,s) == 2 ) {
-    			//IF ( system time < end time )
-    			if( timeObjEval(sys,e) == 1 ) {
-    				LEDsPowered = TRUE;
-    			}
-    			else {
-    				LEDsPowered = FALSE;
-    			}
-    		}
-    		else {
-    			LEDsPowered = FALSE;
-    		}
-    		if( LEDsPowered == TRUE ) {
-    			strip->setStripWhite();
-    		}
-    		else {
-    			strip->turnStripOff();
-    		}
-
+    		sysTimeOutOfSync = FALSE;
     	}
     	else sysTimeOutOfSync = TRUE;
 
+    	currentSysTime = time(0);
+    	gmtime_r(&currentSysTime, &currentSysTimeStructGMT);
+    	localtime_r(&currentSysTime, &currentSysTimeStructLocal);
+    	struct tm * sys = &currentSysTimeStructLocal;
+    	struct tm * s = &currentStartTimeStruct;
+    	struct tm * e = &currentEndTimeStruct;
+    	//IF( system time >= start time)
+    	if( timeObjEval(sys,s) == 3 || timeObjEval(sys,s) == 2 ) {
+    		//IF ( system time < end time )
+    		if( timeObjEval(sys,e) == 1 ) {
+    			//If the strip was off, turn it on (prevents
+    			//re-writing the strip every second)
+    			if( LEDsPowered == FALSE ) {
+    				strip->setStripWhite();
+    				strip->writeLedStrip();
+    			}
+    			LEDsPowered = TRUE;
+    		}
+    		else {
+    			//If the strip was on, and we're out of the
+    			//time window, turn it off
+    			if( LEDsPowered == TRUE ) strip->turnStripOff();
+    			LEDsPowered = FALSE;
+    		}
+    	}
+    	else {
+    		//If the strip was on, and we're out of the
+    		//time window, turn it off
+    		if( LEDsPowered == TRUE ) strip->turnStripOff();
+    		LEDsPowered = FALSE;
+    	}
     	NTPSyncCounter++;
     	RTCSyncCounter++;
     }

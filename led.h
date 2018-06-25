@@ -15,16 +15,17 @@ class Led {
 public:
 	Led();
 	~Led();
-	void setColorValue(BYTE r, BYTE g, BYTE b);
+	void setColorValue(uint8_t r, uint8_t g, uint8_t b);
 	void setColorlessValue();
+	void modifyBrightness(int brightness);
 	void writeLedValues();
 	void setLedOff();
-	int getColorValues(BYTE id);
+	int getColorValues(uint8_t id);
 
 private:
-	BYTE redVal;
-	BYTE greenVal;
-	BYTE blueVal;
+	uint8_t redVal;
+	uint8_t greenVal;
+	uint8_t blueVal;
 };
 
 #endif /* LED_H_ */

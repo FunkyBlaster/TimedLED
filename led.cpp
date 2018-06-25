@@ -32,7 +32,10 @@ Led::~Led() {
  * @param g - green value (0-127)                      *
  * @param b - blue value (0-127)                       *
  *******************************************************/
-void Led::setColorValue( BYTE r, BYTE g, BYTE b ) {
+void Led::setColorValue( uint8_t r, uint8_t g, uint8_t b ) {
+	if( r > 127 ) r = 127;
+	if( g > 127 ) g = 127;
+	if( b > 127 ) b = 127;
 	redVal = r | 0x80;
 	greenVal = g | 0x80;
 	blueVal = b | 0x80;
@@ -56,6 +59,20 @@ void Led::setLedOff() {
 	blueVal = 0x80;
 }
 
+/******************************************************************
+ * @brief Sets the brightness, applies to all 3 color values      *
+ *                                                                *
+ * @param brightness - percentage brightness (100 - max, 0 - min) *
+ ******************************************************************/
+void Led::modifyBrightness(int brightness) {
+	//Make sure brighteness isn't OOB
+	if( brightness > 100 ) brightness = 100;
+	else if( brightness < 0 ) brightness = 0;
+	//Set each color to a percentage of its current value
+	redVal = (brightness * redVal) / 100;
+	greenVal = (brightness * greenVal) / 100;
+	blueVal = (brightness * blueVal) / 100;
+}
 /******************************************
  * @brief Writes color values to SPI      *
  *                                        *
@@ -64,14 +81,14 @@ void Led::setLedOff() {
  *         as opposed to RGB - don't fix. *
  ******************************************/
 void Led::writeLedValues() {
-	BYTE colors[3] = { greenVal, redVal, blueVal };
+	uint8_t colors[3] = { greenVal, redVal, blueVal };
 	LedStrip::GetLedStrip()->WriteToDSPI( colors, 3 );
 }
 
 /********************************************************
  * @brief Returns color values of this LED (debugging)  *
  ********************************************************/
-int Led::getColorValues(BYTE id) {
+int Led::getColorValues(uint8_t id) {
 	switch(id) {
 	case 0:
 		return (int)greenVal;
