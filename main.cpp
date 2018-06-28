@@ -340,10 +340,6 @@ void UserMain(void * pd) {
     strip->initLedStrip();
     strip->turnStripOff();
 
-    //
-    int x = 0;
-    //
-
     LEDsPowered = FALSE;
 
     //Initialize all of the time variables to non-null values
@@ -389,9 +385,6 @@ void UserMain(void * pd) {
     			//re-writing the strip every second)
     			if( LEDsPowered == FALSE ) {
     				strip->setStripWhite();
-    				//
-    				strip->modifyStripBrightness(x);
-    				//
     				strip->writeLedStrip();
     			}
     			LEDsPowered = TRUE;

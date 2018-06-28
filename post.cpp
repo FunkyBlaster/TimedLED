@@ -120,12 +120,12 @@ void formatData(int fd, char * dataPtr) {
 				//AMPM flag is = 1 if PM (if first character is 'P')
 				if( str[i+1] == 'p' ) {
 					desiredTimeInput[fieldId] = 1;
-					iprintf("1 into time input array\r\n");
+					//iprintf("1 into time input array\r\n");
 				}
 
 				else if( str[i+1] == 'a' ) {
 					desiredTimeInput[fieldId] = 0;
-					iprintf("0 into time input array\r\n");
+					//iprintf("0 into time input array\r\n");
 				}
 
 				else {

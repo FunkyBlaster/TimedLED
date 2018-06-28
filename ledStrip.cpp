@@ -119,7 +119,7 @@ void LedStrip::setStripWhite() {
  **************************************************/
 void LedStrip::modifyStripBrightness(uint8_t brightPercent) {
 	for( int i = 0; i < ledCount; i++ ) {
-		ledStrip[i].setColorlessValue();
+		ledStrip[i].modifyBrightness(brightPercent);
 	}
 }
 
@@ -130,10 +130,10 @@ void LedStrip::modifyStripBrightness(uint8_t brightPercent) {
 void LedStrip::writeLedStrip() {
 	for( int i = 0; i < ledCount; i++ ) {
 		ledStrip[i].writeLedValues();
-//		iprintf("G:%d ",ledStrip[i].getColorValues(0));
-//		iprintf("R:%d ",ledStrip[i].getColorValues(1));
-//		iprintf("B:%d ",ledStrip[i].getColorValues(2));
-//		iprintf("I:%d\r",i);
+		iprintf("G:%d ",ledStrip[i].getColorValues(0));
+		iprintf("R:%d ",ledStrip[i].getColorValues(1));
+		iprintf("B:%d ",ledStrip[i].getColorValues(2));
+		iprintf("I:%d\r",i);
 	}
 	currentStripSPI->WriteToDSPI( clearBytes, 2 );
 }

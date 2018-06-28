@@ -17,7 +17,7 @@ public:
 	~Led();
 	void setColorValue(uint8_t r, uint8_t g, uint8_t b);
 	void setColorlessValue();
-	void modifyBrightness(int brightness);
+	void modifyBrightness(uint8_t brightness);
 	void writeLedValues();
 	void setLedOff();
 	int getColorValues(uint8_t id);

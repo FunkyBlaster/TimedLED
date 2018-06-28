@@ -64,14 +64,28 @@ void Led::setLedOff() {
  *                                                                *
  * @param brightness - percentage brightness (100 - max, 0 - min) *
  ******************************************************************/
-void Led::modifyBrightness(int brightness) {
+void Led::modifyBrightness(uint8_t brightness) {
 	//Make sure brighteness isn't OOB
 	if( brightness > 100 ) brightness = 100;
-	else if( brightness < 0 ) brightness = 0;
-	//Set each color to a percentage of its current value
+	if( brightness < 0 ) brightness = 0;
+	/*
+	 * AND redVal to ignore the most significant bit, which
+	 * gives us the current brightness value.
+	 * then compute the new brightness value for each color.
+	 * Next, OR redVal to add most significant bit.
+	 * Finally, repeat for each color.
+	 */
+	redVal = redVal & 0x7F;
 	redVal = (brightness * redVal) / 100;
+	redVal = redVal | 0x80;
+
+	greenVal = greenVal & 0x7F;
 	greenVal = (brightness * greenVal) / 100;
+	greenVal = greenVal | 0x80;
+
+	blueVal = blueVal & 0x7F;
 	blueVal = (brightness * blueVal) / 100;
+	blueVal = blueVal | 0x80;
 }
 /******************************************
  * @brief Writes color values to SPI      *
