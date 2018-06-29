@@ -24,14 +24,14 @@
 #include "main.h"
 #include "ledStrip.h"
 
-#define TICKS_PER_MONTH 2592000;
-#define TICKS_PER_HOUR 3600;
-
 time_t currentSysTime;
 struct tm currentSysTimeStructGMT;
 struct tm currentSysTimeStructLocal;
 struct tm currentStartTimeStruct;
 struct tm currentEndTimeStruct;
+const int LESS_THAN = 1;
+const int EQUAL_TO = 2;
+const int GREATER_THAN = 3;
 
 const char * AppName="Time-Activated LEDs";
 char * timeZoneASCII;
@@ -39,18 +39,20 @@ char * prevTimeZone;
 char timeBuf[80];
 char serialBuf[80];
 const char syncBuf[21] = " (Time Sync Failed)\0";
-const int ticksInOneMonth = TICKS_PER_MONTH;
-const int ticksInOneHour  = TICKS_PER_HOUR;
-int NTPSyncCounter= ticksInOneMonth;
-int RTCSyncCounter= ticksInOneHour;
-extern const int ledCount;
-LedStrip *strip;
 
+//UserMain() ticks every ~1s
+const int TICKS_PER_MONTH = 2592000;
+const int TICKS_PER_HOUR = 3600;
+int NTPSyncCounter;
+int RTCSyncCounter;
 BOOL sysTimeOutOfSync;
-BOOL LEDsPowered;
 BOOL NTPSyncSuccessful;
 BOOL RTCFromSystemSetSuccessful;
 BOOL SystemFromRTCSetSuccessful;
+
+extern const int ledCount;
+LedStrip *strip;
+BOOL LEDsPowered;
 
 extern "C" {
 	void UserMain(void * pd);
@@ -293,7 +295,7 @@ BOOL SyncSystemTimeNTP() {
 }
 
 /**********************************************************
- * @brief Accuracy to the second not important;           *
+ * @brief Evaluate two time structures                    *
  *                                                        *
  * @param one - pointer to first time struct to compare   *
  * @param two - pointer to second time struct to compare  *
@@ -348,17 +350,25 @@ void UserMain(void * pd) {
     currentStartTimeStruct = currentSysTimeStructGMT;
     currentEndTimeStruct = currentSysTimeStructGMT;
 
+    NTPSyncCounter = TICKS_PER_MONTH;
+    RTCSyncCounter = TICKS_PER_HOUR;
+
     while( 1 ) {
-    	if( NTPSyncCounter >= ticksInOneMonth || sysTimeOutOfSync == TRUE ) {
+    	if( NTPSyncCounter >= TICKS_PER_MONTH ) {
     		//Sync RTC to NTP server pool once a month
     		NTPSyncSuccessful = SyncSystemTimeNTP();
-    		RTCFromSystemSetSuccessful = RTCSetRTCfromSystemTime();
+    		//Only change the RTC if the system time is accurate
     		NTPSyncCounter = 0;
+    		if( NTPSyncSuccessful ) RTCFromSystemSetSuccessful = RTCSetRTCfromSystemTime();
+    		//If NTP sync fails, try again in 10 sec
+    		else NTPSyncCounter = TICKS_PER_MONTH - 10;
     	}
-    	if( RTCSyncCounter >= ticksInOneHour || sysTimeOutOfSync == TRUE ) {
+    	if( RTCSyncCounter >= TICKS_PER_HOUR ) {
     		//Once an hour, sync the system time to the RTC
     		SystemFromRTCSetSuccessful = RTCSetSystemFromRTCTime();
     		RTCSyncCounter = 0;
+    		//If RTC sync fails, try again in 10 sec
+    		if( !SystemFromRTCSetSuccessful ) RTCSyncCounter = TICKS_PER_HOUR - 10;
     	}
 
     	OSTimeDly(TICKS_PER_SECOND);
@@ -366,7 +376,7 @@ void UserMain(void * pd) {
     	 * If setting of RTC and system time from NTP pool is successful,
     	 * update HTML time variable and check for time match
     	 */
-    	if( NTPSyncSuccessful == TRUE && RTCFromSystemSetSuccessful == 0 ) {
+    	if( NTPSyncSuccessful && RTCFromSystemSetSuccessful == 0 ) {
     		sysTimeOutOfSync = FALSE;
     	}
     	else sysTimeOutOfSync = TRUE;
@@ -378,9 +388,9 @@ void UserMain(void * pd) {
     	struct tm * s = &currentStartTimeStruct;
     	struct tm * e = &currentEndTimeStruct;
     	//IF( system time >= start time)
-    	if( timeObjEval(sys,s) == 3 || timeObjEval(sys,s) == 2 ) {
+    	if( timeObjEval(sys,s) == GREATER_THAN || timeObjEval(sys,s) == EQUAL_TO ) {
     		//IF ( system time < end time )
-    		if( timeObjEval(sys,e) == 1 ) {
+    		if( timeObjEval(sys,e) == LESS_THAN ) {
     			//If the strip was off, turn it on (prevents
     			//re-writing the strip every second)
     			if( LEDsPowered == FALSE ) {

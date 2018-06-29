@@ -133,7 +133,7 @@ void LedStrip::writeLedStrip() {
 		iprintf("G:%d ",ledStrip[i].getColorValues(0));
 		iprintf("R:%d ",ledStrip[i].getColorValues(1));
 		iprintf("B:%d ",ledStrip[i].getColorValues(2));
-		iprintf("I:%d\r",i);
+		iprintf("I:%d\r\n",i);
 	}
 	currentStripSPI->WriteToDSPI( clearBytes, 2 );
 }
