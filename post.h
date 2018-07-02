@@ -21,29 +21,18 @@
 * San Diego, CA 92121
 * www.netburner.com
 ******************************************************************************/
-#ifndef MAIN_H_
-#define MAIN_H_
 
-char* getCurSysTimeASCII(int fd);
+#ifndef POST_H_
+#define POST_H_
 
-char* getCurStartTimeASCII(int fd);
+void writeStartForm(int sock, PCSTR url);
 
-char* getCurEndTimeASCII(int fd);
+void tzToInt(std::string input);
 
-char* getTimeZoneASCII(int fd);
+void formatData(char *dataPtr);
 
-void setCurStartTime(int hours, int min, int ampm);
-
-void setCurEndTime(int hours, int min, int ampm);
-
-void setTimeZone(char * tz, char * tzASCII);
-
-char* SerializeClockData(int fd);
+int MyDoPost(int sock, char *url, char *pData, char *rxBuffer);
 
 void RegisterPost();
 
-BOOL syncSystemTimeNTP();
-
-int timeObjEval(struct tm * one, struct tm * two);
-
-#endif /* MAIN_H_ */
+#endif /* POST_H_ */

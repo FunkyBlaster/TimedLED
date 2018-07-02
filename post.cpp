@@ -1,16 +1,41 @@
-/*
+/******************************************************************************
+* Copyright 1998-2016 NetBurner, Inc.  ALL RIGHTS RESERVED
+*
+*    Permission is hereby granted to purchasers of NetBurner Hardware to use or
+*    modify this computer program for any use as long as the resultant program
+*    is only executed on NetBurner provided hardware.
+*
+*    No other rights to use this program or its derivatives in part or in
+*    whole are granted.
+*
+*    It may be possible to license this or other NetBurner software for use on
+*    non-NetBurner Hardware. Contact sales@Netburner.com for more information.
+*
+*    NetBurner makes no representation or warranties with respect to the
+*    performance of this computer program, and specifically disclaims any
+*    responsibility for any damages, special or consequential, connected with
+*    the use of this program.
+*
+* NetBurner
+* 5405 Morehouse Dr.
+* San Diego, CA 92121
+* www.netburner.com
+******************************************************************************/
+
+/**************************************************************
  * This class handles all the data input by the
  * user and submitted via a POST form. It formats
  * the data and passes it to various functions
  * in main.cpp.
- */
-#include <stdio.h>
-#include <stdlib.h>
+ **************************************************************/
 #include <basictypes.h>
 #include <htmlfiles.h>
 #include <http.h>
 #include <iosys.h>
 #include <string>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "main.h"
 
 #define MAX_BUF_LEN 80
@@ -39,53 +64,53 @@ void writeStartForm( int sock, PCSTR url ) {
  * @param sock - handle to network socket   *
  * @param input - time zone string          *
  ********************************************/
-void tzToInt(int sock, std::string input) {
+void tzToInt( std::string input ) {
 	/*
 	 * input variable comes from POST timezone selection;
 	 * pass as tz variable to setTimeZone in main.cpp along
 	 * with representative ASCII string
 	 */
 	if( input == "PST8PDT7" ) {
-		setTimeZone(sock,"PST8PDT7","Pacific Time (US)");
+		setTimeZone("PST8PDT7","Pacific Time (US)");
 	}
 	else if( input == "MST7MDT6") {
-		setTimeZone(sock,"MST7MDT6","Mountain Time (US)");
+		setTimeZone("MST7MDT6","Mountain Time (US)");
 	}
 	else if( input == "CST6CDT5" ) {
-		setTimeZone(sock,"CST6CDT5","Central Time (US)");
+		setTimeZone("CST6CDT5","Central Time (US)");
 	}
 	else if( input == "EST5EDT4" ) {
-		setTimeZone(sock,"EST5EDT4","Eastern Time (US)");
+		setTimeZone("EST5EDT4","Eastern Time (US)");
 	}
 	else if( input == "AKST9AKDT8" ) {
-		setTimeZone(sock,"AKST9AKDT8","Alaska Time (US)");
+		setTimeZone("AKST9AKDT8","Alaska Time (US)");
 	}
 	else if( input == "HST10" ) {
-		setTimeZone(sock,"HST10","Hawaiian Time (US)");
+		setTimeZone("HST10","Hawaiian Time (US)");
 	}
 	else if( input == "AST4ADT3" ) {
-		setTimeZone(sock,"AST4ADT3","Atlantic Time (US/CAN)");
+		setTimeZone("AST4ADT3","Atlantic Time (US/CAN)");
 	}
 	else if( input == "WEST-1WET0" ) {
-		setTimeZone(sock,"WEST-1WET0","Western European Time (EU)");
+		setTimeZone("WEST-1WET0","Western European Time (EU)");
 	}
 	else if( input == "CEST-2CET-1" ) {
-		setTimeZone(sock,"CEST-2CET-1","Central European Time (EU)");
+		setTimeZone("CEST-2CET-1","Central European Time (EU)");
 	}
 	else if( input == "EEST-3EET-2" ) {
-		setTimeZone(sock,"EEST-3EET-2","Eastern European Time (EU)");
+		setTimeZone("EEST-3EET-2","Eastern European Time (EU)");
 	}
 	else if( input == "MSD-4MSK-3" ) {
-		setTimeZone(sock,"MSD-4MSK-3","Moscow Time (EU/RU)");
+		setTimeZone("MSD-4MSK-3","Moscow Time (EU/RU)");
 	}
 	else if( input == "AWST-8" ) {
-		setTimeZone(sock,"AWST-8","Australian Western Time (AU)");
+		setTimeZone("AWST-8","Australian Western Time (AU)");
 	}
 	else if( input == "AEDT-11AEST-10" ) {
-		setTimeZone(sock,"AEDT-11AEST-10","Australian Eastern Time (AU)");
+		setTimeZone("AEDT-11AEST-10","Australian Eastern Time (AU)");
 	}
 	else if( input == "GMT0" ) {
-		setTimeZone(sock,"GMT0","Greenwich Mean Time/Universal Coordinated Time/Zulu Time");
+		setTimeZone("GMT0","Greenwich Mean Time/Universal Coordinated Time/Zulu Time");
 	}
 
 }
@@ -97,7 +122,7 @@ void tzToInt(int sock, std::string input) {
  * @param fd - handle to network socket                            *
  * @param dataPtr - pointer to raw data, passed by MyDoPost(...)   *
  *******************************************************************/
-void formatData(int fd, char * dataPtr) {
+void formatData(char * dataPtr) {
 	//set desiredTimeInput to pre-determined null value (61)
 	for(int i = 0; i <= 6; i++) desiredTimeInput[i] = NULL_VAL;
 	int fieldId;
@@ -146,7 +171,7 @@ void formatData(int fd, char * dataPtr) {
 			}
 			else if( fieldId == 6 ){
 				std::string output = str.substr(i+1,std::string::npos);
-				tzToInt(fd, output);
+				tzToInt(output);
 				//Get substring from start of tz variable to end of string
 			}
 		}
@@ -155,16 +180,16 @@ void formatData(int fd, char * dataPtr) {
 }
 
 
-int MyDoPost( int sock, char * url, char * pData, char * rxBuffer ) {
+int myDoPost( int sock, char * url, char * pData, char * rxBuffer ) {
 	//Format data and place into desiredTimeInput[]
-	formatData(sock, pData);
+	formatData(pData);
 	//Update start/end times in main.cpp
-	setCurStartTime(sock,desiredTimeInput[0],desiredTimeInput[1],desiredTimeInput[2]);
-	setCurEndTime(sock,desiredTimeInput[3],desiredTimeInput[4],desiredTimeInput[5]);
+	setCurStartTime(desiredTimeInput[0],desiredTimeInput[1],desiredTimeInput[2]);
+	setCurEndTime(desiredTimeInput[3],desiredTimeInput[4],desiredTimeInput[5]);
 	RedirectResponse( sock, "index.htm" );
 	return 1;
 }
 
 void RegisterPost() {
-	SetNewPostHandler( MyDoPost );
+	SetNewPostHandler( myDoPost );
 }

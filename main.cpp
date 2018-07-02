@@ -1,10 +1,34 @@
-/*
+/******************************************************************************
+* Copyright 1998-2016 NetBurner, Inc.  ALL RIGHTS RESERVED
+*
+*    Permission is hereby granted to purchasers of NetBurner Hardware to use or
+*    modify this computer program for any use as long as the resultant program
+*    is only executed on NetBurner provided hardware.
+*
+*    No other rights to use this program or its derivatives in part or in
+*    whole are granted.
+*
+*    It may be possible to license this or other NetBurner software for use on
+*    non-NetBurner Hardware. Contact sales@Netburner.com for more information.
+*
+*    NetBurner makes no representation or warranties with respect to the
+*    performance of this computer program, and specifically disclaims any
+*    responsibility for any damages, special or consequential, connected with
+*    the use of this program.
+*
+* NetBurner
+* 5405 Morehouse Dr.
+* San Diego, CA 92121
+* www.netburner.com
+******************************************************************************/
+
+/***********************************************************************************
  * This class keeps track of the system time, start time,
  * end time, and time zone and their associated ASCII representations.
  * In addition, this class also handles NTP server and on-board
  * RTC synchronization, data serialization for the dynamic webpage,
  * and determining if LEDs should be active or not.
- */
+ ***********************************************************************************/
 #include <autoupdate.h>
 #include <cstring>
 #include <ctype.h>
@@ -24,18 +48,17 @@
 #include "main.h"
 #include "ledStrip.h"
 
+#define LESS_THAN 1
+#define EQUAL_TO 2
+#define GREATER_THAN 3
+
 time_t currentSysTime;
-struct tm currentSysTimeStructGMT;
 struct tm currentSysTimeStructLocal;
 struct tm currentStartTimeStruct;
 struct tm currentEndTimeStruct;
-const int LESS_THAN = 1;
-const int EQUAL_TO = 2;
-const int GREATER_THAN = 3;
 
 const char * AppName="Time-Activated LEDs";
 char * timeZoneASCII;
-char * prevTimeZone;
 char timeBuf[80];
 char serialBuf[80];
 const char syncBuf[21] = " (Time Sync Failed)\0";
@@ -59,11 +82,11 @@ extern "C" {
 }
 
 /**********************************************************
- * @brief Get ASCII representation of stored system time  *
- *                                                        *
- * @param fd - handle to the network socket connection    *
- *                                                        *
- * @return - ASCII string of system time                  *
+ * @brief Get ASCII representation of stored system time
+ *
+ * @param fd - handle to the network socket connection
+ *
+ * @return - ASCII string of system time
  **********************************************************/
 char * getCurSysTimeASCII(int fd) {
 	/*
@@ -72,6 +95,7 @@ char * getCurSysTimeASCII(int fd) {
 	 * format and return pointer to buffer
 	 */
 	memset(&timeBuf, 0, 80);
+//	iprintf("Before getCurSysTime format: %s\r\n", asctime(&currentSysTimeStructLocal));
 	strftime(timeBuf,80,"%I:%M %p",&currentSysTimeStructLocal);
 	// 02:35 -> 2:35
 	if(timeBuf[0] == '0') {
@@ -99,11 +123,11 @@ char * getCurSysTimeASCII(int fd) {
 }
 
 /*********************************************************
- * @brief Get ASCII representation of stored start time  *
- *                                                       *
- * @param fd - handle to the network socket connection   *
- *                                                       *
- * @return - ASCII string of start time                  *
+ * @brief Get ASCII representation of stored start time
+ *
+ * @param fd - handle to the network socket connection
+ *
+ * @return - ASCII string of start time
  *********************************************************/
 char * getCurStartTimeASCII(int fd) {
 	//Same as current system function, but for start time
@@ -119,11 +143,11 @@ char * getCurStartTimeASCII(int fd) {
 }
 
 /*******************************************************
- * @brief Get ASCII representation of stored end time  *
- *                                                     *
- * @param fd - handle to the network socket connection *
- *                                                     *
- * @return - ASCII string of end time                  *
+ * @brief Get ASCII representation of stored end time
+ *
+ * @param fd - handle to the network socket connection
+ *
+ * @return - ASCII string of end time
  *******************************************************/
 char * getCurEndTimeASCII(int fd) {
 	//Same as current system function, but for end time
@@ -139,30 +163,30 @@ char * getCurEndTimeASCII(int fd) {
 }
 
 /*******************************************************
- * @brief Get ASCII representation of stored time zone *
- *                                                     *
- * @param fd - handle to the network socket connection *
- *                                                     *
- * @return - ASCII string of time zone                 *
+ * @brief Get ASCII representation of stored time zone
+ *
+ * @param fd - handle to the network socket connection
+ *
+ * @return - ASCII string of time zone
  *******************************************************/
 char * getCurTimeZoneASCII(int fd) {
 	if( timeZoneASCII != 0 ) {
 		return timeZoneASCII;
 	}
 	else {
-		return "Time Zone not set. Defaulting to UTC (GMT).";
+		return "Time Zone not set, defaulting to UTC/GMT.";
 	}
 }
 
-/*******************************************************
- * @brief Set the desired start (LED=ON) time          *
- *                                                     *
- * @param fd - handle to the network socket connection *
- * @param hours - The hour value of the new time       *
- * @param min - The minute value of the new time       *
- * @param ampm - AM/PM flag (0 = AM, 1 = PM)           *
- *******************************************************/
-void setCurStartTime(int fd, int hours, int min, int ampm) {
+/************************************************************
+ * @brief Set the desired start (LED=ON) time
+ *
+ * @param fd - handle to the network socket connection
+ * @param hours - The hour value of the new time
+ * @param min - The minute value of the new time
+ * @param ampm - AM/PM flag (0 = AM, 1 = PM)
+ ************************************************************/
+void setCurStartTime(int hours, int min, int ampm) {
 	/*
 	 * 61 is null value set by formatData() if a value was not
 	 * changed (if value not changed, don't update start time)
@@ -204,14 +228,14 @@ void setCurStartTime(int fd, int hours, int min, int ampm) {
 }
 
 /********************************************************
- * @brief Set the desired end (LED=OFF) time            *
- *                                                      *
- * @param fd - handle to the network socket connection  *
- * @param hours - The hour value of the new time        *
- * @param min - The minute value of the new time        *
- * @param ampm - AM/PM flag (0 = AM, 1 = PM)            *
+ * @brief Set the desired end (LED=OFF) time
+ *
+ * @param fd - handle to the network socket connection
+ * @param hours - The hour value of the new time
+ * @param min - The minute value of the new time
+ * @param ampm - AM/PM flag (0 = AM, 1 = PM)
  ********************************************************/
-void setCurEndTime(int fd, int hours, int min, int ampm) {
+void setCurEndTime(int hours, int min, int ampm) {
 	/*
 	 * 61 is null value set by formatData() if a value was not
 	 * changed (if value not changed, don't update end time)
@@ -253,28 +277,26 @@ void setCurEndTime(int fd, int hours, int min, int ampm) {
 }
 
 /************************************************************
- * @brief Called with input from POST form, sets            *
- *        the tz variable and its ASCII equivalent          *
- *                                                          *
- * @param fd - handle to the network socket connection      *
- * @param tz - pointer to tz string literal                 *
- * @param tzASCII - pointer to ASCII representation of tz   *
+ * @brief Called with input from POST form, sets
+ *        the tz variable and its ASCII equivalent
+ *
+ * @param fd - handle to the network socket connection
+ * @param tz - pointer to tz string literal
+ * @param tzASCII - pointer to ASCII representation of tz
  ************************************************************/
-void setTimeZone(int fd, char * tz, char * tzASCII) {
+void setTimeZone(char * tz, char * tzASCII) {
 	tzsetchar(tz);
 	timeZoneASCII = tzASCII;
-	prevTimeZone = tz;
 }
 
-/*********************************************************
- * @brief Method to be called by clockData.html          *
- *                                                       *
- * @param fd - handle to the network socket connection   *
- *                                                       *
- * @return - buffer of current system time in ASCII form *
- *********************************************************/
-char * SerializeClockData(int fd)
-{
+/*******************************************************************
+ * @brief Method to be called by clockData.html
+ *
+ * @param fd - handle to the network socket connection
+ *
+ * @return - buffer of current system time in ASCII form
+ *******************************************************************/
+char * SerializeClockData(int fd) {
 	memset(&serialBuf, 0, 80);
     snprintf(serialBuf, 80, "%s\r\n", getCurSysTimeASCII(fd));
     return serialBuf;
@@ -283,11 +305,11 @@ char * SerializeClockData(int fd)
 void RegisterPost();
 
 /*********************************************************
- * @brief Sync the system time with the NTP server pool  *
- *                                                       *
- * @return - TRUE on success, FALSE on fail              *
+ * @brief Sync the system time with the NTP server pool
+ *
+ * @return - TRUE on success, FALSE on fail
  *********************************************************/
-BOOL SyncSystemTimeNTP() {
+BOOL syncSystemTimeNTP() {
 
 	BOOL retVal = SetTimeNTPFromPool();
 	currentSysTime = time(0);
@@ -295,16 +317,16 @@ BOOL SyncSystemTimeNTP() {
 }
 
 /**********************************************************
- * @brief Evaluate two time structures                    *
- *                                                        *
- * @param one - pointer to first time struct to compare   *
- * @param two - pointer to second time struct to compare  *
- *                                                        *
- * @return - (one) ___ (two)                              *
- *            0 - null;                                   *
- *            1 - less than;                              *
- *            2 - equal to;                               *
- *            3 - greater than;                           *
+ * @brief Evaluate two time structures
+ *
+ * @param one - pointer to first time struct to compare
+ * @param two - pointer to second time struct to compare
+ *
+ * @return - (one) ___ (two)
+ *            0 - null;
+ *            1 - less than;
+ *            2 - equal to;
+ *            3 - greater than;
  **********************************************************/
 int timeObjEval(struct tm * one, struct tm * two) {
 	int oneMin  = one->tm_min;
@@ -345,10 +367,10 @@ void UserMain(void * pd) {
     LEDsPowered = FALSE;
 
     //Initialize all of the time variables to non-null values
-    currentSysTimeStructGMT = *localtime(&currentSysTime);
+    //swapped gmtime and localtime
     currentSysTimeStructLocal = *gmtime(&currentSysTime);
-    currentStartTimeStruct = currentSysTimeStructGMT;
-    currentEndTimeStruct = currentSysTimeStructGMT;
+    currentStartTimeStruct = *gmtime(&currentSysTime);
+    currentEndTimeStruct = *gmtime(&currentSysTime);
 
     NTPSyncCounter = TICKS_PER_MONTH;
     RTCSyncCounter = TICKS_PER_HOUR;
@@ -356,7 +378,7 @@ void UserMain(void * pd) {
     while( 1 ) {
     	if( NTPSyncCounter >= TICKS_PER_MONTH ) {
     		//Sync RTC to NTP server pool once a month
-    		NTPSyncSuccessful = SyncSystemTimeNTP();
+    		NTPSyncSuccessful = syncSystemTimeNTP();
     		//Only change the RTC if the system time is accurate
     		NTPSyncCounter = 0;
     		if( NTPSyncSuccessful ) RTCFromSystemSetSuccessful = RTCSetRTCfromSystemTime();
@@ -368,9 +390,8 @@ void UserMain(void * pd) {
     		SystemFromRTCSetSuccessful = RTCSetSystemFromRTCTime();
     		RTCSyncCounter = 0;
     		//If RTC sync fails, try again in 10 sec
-    		if( !SystemFromRTCSetSuccessful ) RTCSyncCounter = TICKS_PER_HOUR - 10;
+    		if( SystemFromRTCSetSuccessful ) RTCSyncCounter = TICKS_PER_HOUR - 10;
     	}
-
     	OSTimeDly(TICKS_PER_SECOND);
     	/*
     	 * If setting of RTC and system time from NTP pool is successful,
@@ -381,12 +402,15 @@ void UserMain(void * pd) {
     	}
     	else sysTimeOutOfSync = TRUE;
 
+//    	iprintf("Local: %s\r\n", asctime(&currentSysTimeStructLocal));
+//    	iprintf("GMT: %s\r\n\n", asctime(gmtime(&currentSysTime)));
+
     	currentSysTime = time(0);
-    	gmtime_r(&currentSysTime, &currentSysTimeStructGMT);
-    	localtime_r(&currentSysTime, &currentSysTimeStructLocal);
+    	currentSysTimeStructLocal = *localtime(&currentSysTime);
     	struct tm * sys = &currentSysTimeStructLocal;
     	struct tm * s = &currentStartTimeStruct;
     	struct tm * e = &currentEndTimeStruct;
+
     	//IF( system time >= start time)
     	if( timeObjEval(sys,s) == GREATER_THAN || timeObjEval(sys,s) == EQUAL_TO ) {
     		//IF ( system time < end time )
