@@ -51,6 +51,9 @@
 #define LESS_THAN 1
 #define EQUAL_TO 2
 #define GREATER_THAN 3
+#define TICKS_PER_MONTH 2592000
+//#define TICKS_PER_HOUR 3600
+#define TICKS_PER_HOUR 11
 
 time_t currentSysTime;
 struct tm currentSysTimeStructLocal;
@@ -59,19 +62,18 @@ struct tm currentEndTimeStruct;
 
 const char * AppName="Time-Activated LEDs";
 char * timeZoneASCII;
+char * lastTimeZoneSet;
 char timeBuf[80];
 char serialBuf[80];
 const char syncBuf[21] = " (Time Sync Failed)\0";
 
 //UserMain() ticks every ~1s
-const int TICKS_PER_MONTH = 2592000;
-const int TICKS_PER_HOUR = 3600;
 int NTPSyncCounter;
 int RTCSyncCounter;
 BOOL sysTimeOutOfSync;
 BOOL NTPSyncSuccessful;
 BOOL RTCFromSystemSetSuccessful;
-BOOL SystemFromRTCSetSuccessful;
+BOOL SystemFromRTCSetFailure;
 
 extern const int ledCount;
 LedStrip *strip;
@@ -95,7 +97,6 @@ char * getCurSysTimeASCII(int fd) {
 	 * format and return pointer to buffer
 	 */
 	memset(&timeBuf, 0, 80);
-//	iprintf("Before getCurSysTime format: %s\r\n", asctime(&currentSysTimeStructLocal));
 	strftime(timeBuf,80,"%I:%M %p",&currentSysTimeStructLocal);
 	// 02:35 -> 2:35
 	if(timeBuf[0] == '0') {
@@ -287,6 +288,7 @@ void setCurEndTime(int hours, int min, int ampm) {
 void setTimeZone(char * tz, char * tzASCII) {
 	tzsetchar(tz);
 	timeZoneASCII = tzASCII;
+	lastTimeZoneSet = tz;
 }
 
 /*******************************************************************
@@ -379,18 +381,27 @@ void UserMain(void * pd) {
     	if( NTPSyncCounter >= TICKS_PER_MONTH ) {
     		//Sync RTC to NTP server pool once a month
     		NTPSyncSuccessful = syncSystemTimeNTP();
+
     		//Only change the RTC if the system time is accurate
-    		NTPSyncCounter = 0;
     		if( NTPSyncSuccessful ) RTCFromSystemSetSuccessful = RTCSetRTCfromSystemTime();
     		//If NTP sync fails, try again in 10 sec
     		else NTPSyncCounter = TICKS_PER_MONTH - 10;
+
+    		NTPSyncCounter = 0;
     	}
     	if( RTCSyncCounter >= TICKS_PER_HOUR ) {
     		//Once an hour, sync the system time to the RTC
-    		SystemFromRTCSetSuccessful = RTCSetSystemFromRTCTime();
+    		SystemFromRTCSetFailure = RTCSetSystemFromRTCTime();
+
+    		iprintf("CONDITION: %s\r\n",lastTimeZoneSet);
+    		if( lastTimeZoneSet != NULL ) {
+    			tzsetchar(lastTimeZoneSet);
+    		}
+    		iprintf("rtc sync\r\n");
+
     		RTCSyncCounter = 0;
     		//If RTC sync fails, try again in 10 sec
-    		if( SystemFromRTCSetSuccessful ) RTCSyncCounter = TICKS_PER_HOUR - 10;
+    		if( SystemFromRTCSetFailure ) RTCSyncCounter = TICKS_PER_HOUR - 10;
     	}
     	OSTimeDly(TICKS_PER_SECOND);
     	/*
@@ -402,11 +413,19 @@ void UserMain(void * pd) {
     	}
     	else sysTimeOutOfSync = TRUE;
 
-//    	iprintf("Local: %s\r\n", asctime(&currentSysTimeStructLocal));
-//    	iprintf("GMT: %s\r\n\n", asctime(gmtime(&currentSysTime)));
+    	struct tm rtcTime;
+    	RTCGetTime(rtcTime);
 
-    	currentSysTime = time(0);
+    	//Set currentSysTime variable to the system's time
+    	time(&currentSysTime);
+    	//Convert to local timezone
     	currentSysTimeStructLocal = *localtime(&currentSysTime);
+
+    	iprintf("RTC TIME: %s\r\n",asctime(&rtcTime));
+    	iprintf("sys time str local: %s\r\n\n", getCurSysTimeASCII(0));
+
+    	//SYSTEM TIME IS STORED AS LOCAL TIME
+
     	struct tm * sys = &currentSysTimeStructLocal;
     	struct tm * s = &currentStartTimeStruct;
     	struct tm * e = &currentEndTimeStruct;
