@@ -150,7 +150,7 @@ void LedStrip::modifyStripBrightness(uint8_t brightPercent) {
  * Writes current LED values to DSPI and     *
  * resets the strip by passing 2 empty bits  *
  *********************************************/
-void LedStrip::writeLedStrip() {
+void LedStrip::updateLedStrip() {
 	for( int i = 0; i < ledCount; i++ ) {
 		ledStrip[i].writeLedValues();
 //		iprintf("G:%d ",ledStrip[i].getColorValues(0));
@@ -169,7 +169,7 @@ void LedStrip::turnStripOff() {
 		//Turn strip off (fill with 128 value)
 		ledStrip[i].setLedOff();
 	}
-	writeLedStrip();
+	updateLedStrip();
 }
 
 

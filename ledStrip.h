@@ -41,7 +41,7 @@ public:
 	void setStripWhite();
 	void modifyStripBrightness(uint8_t brightPercent);
 	void setLedValue(int i, uint8_t r, uint8_t g, uint8_t b);
-	void writeLedStrip();
+	void updateLedStrip();
 	void turnStripOff();
 
 private:

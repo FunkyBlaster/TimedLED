@@ -51,9 +51,10 @@
 #define LESS_THAN 1
 #define EQUAL_TO 2
 #define GREATER_THAN 3
-#define TICKS_PER_MONTH 2592000
-//#define TICKS_PER_HOUR 3600
-#define TICKS_PER_HOUR 11
+#define SEC_PER_MONTH 2592000
+#define SEC_PER_HOUR 3600
+#define ACTIVE 1
+#define INACTIVE 0
 
 time_t currentSysTime;
 struct tm currentSysTimeStructLocal;
@@ -77,7 +78,6 @@ BOOL SystemFromRTCSetFailure;
 
 extern const int ledCount;
 LedStrip *strip;
-BOOL LEDsPowered;
 
 extern "C" {
 	void UserMain(void * pd);
@@ -366,7 +366,8 @@ void UserMain(void * pd) {
     strip->initLedStrip();
     strip->turnStripOff();
 
-    LEDsPowered = FALSE;
+    BOOL LEDCurrentState = FALSE;
+    BOOL LEDPreviousState = FALSE;
 
     //Initialize all of the time variables to non-null values
     //swapped gmtime and localtime
@@ -374,87 +375,95 @@ void UserMain(void * pd) {
     currentStartTimeStruct = *gmtime(&currentSysTime);
     currentEndTimeStruct = *gmtime(&currentSysTime);
 
-    NTPSyncCounter = TICKS_PER_MONTH;
-    RTCSyncCounter = TICKS_PER_HOUR;
+    NTPSyncCounter = SEC_PER_MONTH;
+    RTCSyncCounter = SEC_PER_HOUR;
 
     while( 1 ) {
-    	if( NTPSyncCounter >= TICKS_PER_MONTH ) {
+    	if( NTPSyncCounter >= SEC_PER_MONTH ) {
     		//Sync RTC to NTP server pool once a month
     		NTPSyncSuccessful = syncSystemTimeNTP();
-
+    		
     		//Only change the RTC if the system time is accurate
-    		if( NTPSyncSuccessful ) RTCFromSystemSetSuccessful = RTCSetRTCfromSystemTime();
-    		//If NTP sync fails, try again in 10 sec
-    		else NTPSyncCounter = TICKS_PER_MONTH - 10;
-
-    		NTPSyncCounter = 0;
+    		if( NTPSyncSuccessful ) {
+    			NTPSyncCounter = 0;
+    			RTCFromSystemSetSuccessful = RTCSetRTCfromSystemTime();
+    		}
+    		else {
+    			//If NTP sync fails, try again in 10 sec
+    			NTPSyncCounter = SEC_PER_MONTH - 10;
+    		}
     	}
-    	if( RTCSyncCounter >= TICKS_PER_HOUR ) {
+    	if( RTCSyncCounter >= SEC_PER_HOUR ) {
     		//Once an hour, sync the system time to the RTC
+    		tzsetchar("GMT0");
+    		//Set the system time from the Real-Time Clock
     		SystemFromRTCSetFailure = RTCSetSystemFromRTCTime();
-
-    		iprintf("CONDITION: %s\r\n",lastTimeZoneSet);
     		if( lastTimeZoneSet != NULL ) {
     			tzsetchar(lastTimeZoneSet);
     		}
-    		iprintf("rtc sync\r\n");
-
+    		//iprintf("TZ var: %s\r\n",lastTimeZoneSet);
     		RTCSyncCounter = 0;
     		//If RTC sync fails, try again in 10 sec
-    		if( SystemFromRTCSetFailure ) RTCSyncCounter = TICKS_PER_HOUR - 10;
+    		if( SystemFromRTCSetFailure ) {
+    			RTCSyncCounter = SEC_PER_HOUR - 10;
+    		}
     	}
     	OSTimeDly(TICKS_PER_SECOND);
     	/*
     	 * If setting of RTC and system time from NTP pool is successful,
     	 * update HTML time variable and check for time match
     	 */
-    	if( NTPSyncSuccessful && RTCFromSystemSetSuccessful == 0 ) {
+    	if( NTPSyncSuccessful && !RTCFromSystemSetSuccessful ) {
     		sysTimeOutOfSync = FALSE;
     	}
-    	else sysTimeOutOfSync = TRUE;
-
-    	struct tm rtcTime;
-    	RTCGetTime(rtcTime);
+    	else {
+    		sysTimeOutOfSync = TRUE;
+    	}
 
     	//Set currentSysTime variable to the system's time
     	time(&currentSysTime);
     	//Convert to local timezone
     	currentSysTimeStructLocal = *localtime(&currentSysTime);
 
-    	iprintf("RTC TIME: %s\r\n",asctime(&rtcTime));
-    	iprintf("sys time str local: %s\r\n\n", getCurSysTimeASCII(0));
-
-    	//SYSTEM TIME IS STORED AS LOCAL TIME
-
     	struct tm * sys = &currentSysTimeStructLocal;
     	struct tm * s = &currentStartTimeStruct;
     	struct tm * e = &currentEndTimeStruct;
 
-    	//IF( system time >= start time)
+    	//IF( system time >= start time )
     	if( timeObjEval(sys,s) == GREATER_THAN || timeObjEval(sys,s) == EQUAL_TO ) {
     		//IF ( system time < end time )
     		if( timeObjEval(sys,e) == LESS_THAN ) {
-    			//If the strip was off, turn it on (prevents
-    			//re-writing the strip every second)
-    			if( LEDsPowered == FALSE ) {
-    				strip->setStripWhite();
-    				strip->writeLedStrip();
-    			}
-    			LEDsPowered = TRUE;
+    			LEDCurrentState = ACTIVE;
     		}
+    		//IF( system time >= end time )
     		else {
-    			//If the strip was on, and we're out of the
-    			//time window, turn it off
-    			if( LEDsPowered == TRUE ) strip->turnStripOff();
-    			LEDsPowered = FALSE;
+    			LEDCurrentState = INACTIVE;
+    		}
+    	}
+    	//IF( system time < start time )
+    	else {
+    		LEDCurrentState = INACTIVE;
+    	}
+
+    	if( LEDCurrentState == ACTIVE ) {
+    		//Turn LEDs ON
+    		if( LEDPreviousState == INACTIVE ) {
+    			strip->setStripWhite();
+    			strip->updateLedStrip();
     		}
     	}
     	else {
-    		//If the strip was on, and we're out of the
-    		//time window, turn it off
-    		if( LEDsPowered == TRUE ) strip->turnStripOff();
-    		LEDsPowered = FALSE;
+    		//Turn LEDs OFF
+    		if( LEDPreviousState == ACTIVE ) {
+    			strip->turnStripOff();
+    			LEDCurrentState = INACTIVE;
+    		}
     	}
+    	iprintf("Current State: %d\t", LEDCurrentState);
+    	iprintf("Prev State: %d\r\n", LEDPreviousState);
+    	LEDPreviousState = LEDCurrentState;
+    	strip->turnStripOff();
+
     	NTPSyncCounter++;
     	RTCSyncCounter++;
     }
