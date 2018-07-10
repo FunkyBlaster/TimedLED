@@ -30,7 +30,6 @@
  * and determining if LEDs should be active or not.
  ***********************************************************************************/
 #include <autoupdate.h>
-#include <cstring>
 #include <ctype.h>
 #include <dhcpclient.h>
 #include <dspi.h>
@@ -40,10 +39,11 @@
 #include <predef.h>
 #include <rtc.h>
 #include <smarttrap.h>
-#include <sstream>
 #include <startnet.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
+
 
 #include "main.h"
 #include "ledStrip.h"
@@ -365,9 +365,10 @@ void UserMain(void * pd) {
     strip = strip->GetLedStrip();
     strip->initLedStrip();
     strip->turnStripOff();
+    strip->updateLedStrip();
 
-    BOOL LEDCurrentState = FALSE;
-    BOOL LEDPreviousState = FALSE;
+    BOOL LEDCurrentState = INACTIVE;
+    BOOL LEDPreviousState = INACTIVE;
 
     //Initialize all of the time variables to non-null values
     //swapped gmtime and localtime
@@ -408,6 +409,11 @@ void UserMain(void * pd) {
     			RTCSyncCounter = SEC_PER_HOUR - 10;
     		}
     	}
+    	/*
+    	 * Sleep for one second - loop runs approx. every second. Can
+    	 * divide this by two to update twice every second, multiply by two
+    	 * to update every two seconds, etc.
+    	 */
     	OSTimeDly(TICKS_PER_SECOND);
     	/*
     	 * If setting of RTC and system time from NTP pool is successful,
@@ -445,6 +451,11 @@ void UserMain(void * pd) {
     		LEDCurrentState = INACTIVE;
     	}
 
+    	/*
+    	 * This is to prevent the strip from rewriting colors
+    	 * every second; it will only write upon a change
+    	 * of state.
+    	 */
     	if( LEDCurrentState == ACTIVE ) {
     		//Turn LEDs ON
     		if( LEDPreviousState == INACTIVE ) {
@@ -456,13 +467,11 @@ void UserMain(void * pd) {
     		//Turn LEDs OFF
     		if( LEDPreviousState == ACTIVE ) {
     			strip->turnStripOff();
-    			LEDCurrentState = INACTIVE;
+    			strip->updateLedStrip();
     		}
     	}
-    	iprintf("Current State: %d\t", LEDCurrentState);
-    	iprintf("Prev State: %d\r\n", LEDPreviousState);
+
     	LEDPreviousState = LEDCurrentState;
-    	strip->turnStripOff();
 
     	NTPSyncCounter++;
     	RTCSyncCounter++;
