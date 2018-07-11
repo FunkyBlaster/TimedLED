@@ -30,7 +30,6 @@
  * and determining if LEDs should be active or not.
  ***********************************************************************************/
 #include <autoupdate.h>
-#include <cstring>
 #include <ctype.h>
 #include <dhcpclient.h>
 #include <dspi.h>
@@ -40,10 +39,11 @@
 #include <predef.h>
 #include <rtc.h>
 #include <smarttrap.h>
-#include <sstream>
 #include <startnet.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
+
 
 #include "main.h"
 #include "ledStrip.h"
@@ -51,6 +51,10 @@
 #define LESS_THAN 1
 #define EQUAL_TO 2
 #define GREATER_THAN 3
+#define SEC_PER_MONTH 2592000
+#define SEC_PER_HOUR 3600
+#define ACTIVE 1
+#define INACTIVE 0
 
 time_t currentSysTime;
 struct tm currentSysTimeStructLocal;
@@ -59,23 +63,21 @@ struct tm currentEndTimeStruct;
 
 const char * AppName="Time-Activated LEDs";
 char * timeZoneASCII;
+char * lastTimeZoneSet;
 char timeBuf[80];
 char serialBuf[80];
 const char syncBuf[21] = " (Time Sync Failed)\0";
 
 //UserMain() ticks every ~1s
-const int TICKS_PER_MONTH = 2592000;
-const int TICKS_PER_HOUR = 3600;
 int NTPSyncCounter;
 int RTCSyncCounter;
 BOOL sysTimeOutOfSync;
 BOOL NTPSyncSuccessful;
 BOOL RTCFromSystemSetSuccessful;
-BOOL SystemFromRTCSetSuccessful;
+BOOL SystemFromRTCSetFailure;
 
 extern const int ledCount;
 LedStrip *strip;
-BOOL LEDsPowered;
 
 extern "C" {
 	void UserMain(void * pd);
@@ -95,7 +97,6 @@ char * getCurSysTimeASCII(int fd) {
 	 * format and return pointer to buffer
 	 */
 	memset(&timeBuf, 0, 80);
-//	iprintf("Before getCurSysTime format: %s\r\n", asctime(&currentSysTimeStructLocal));
 	strftime(timeBuf,80,"%I:%M %p",&currentSysTimeStructLocal);
 	// 02:35 -> 2:35
 	if(timeBuf[0] == '0') {
@@ -287,6 +288,7 @@ void setCurEndTime(int hours, int min, int ampm) {
 void setTimeZone(char * tz, char * tzASCII) {
 	tzsetchar(tz);
 	timeZoneASCII = tzASCII;
+	lastTimeZoneSet = tz;
 }
 
 /*******************************************************************
@@ -363,8 +365,10 @@ void UserMain(void * pd) {
     strip = strip->GetLedStrip();
     strip->initLedStrip();
     strip->turnStripOff();
+    strip->updateLedStrip();
 
-    LEDsPowered = FALSE;
+    BOOL LEDCurrentState = INACTIVE;
+    BOOL LEDPreviousState = INACTIVE;
 
     //Initialize all of the time variables to non-null values
     //swapped gmtime and localtime
@@ -372,70 +376,103 @@ void UserMain(void * pd) {
     currentStartTimeStruct = *gmtime(&currentSysTime);
     currentEndTimeStruct = *gmtime(&currentSysTime);
 
-    NTPSyncCounter = TICKS_PER_MONTH;
-    RTCSyncCounter = TICKS_PER_HOUR;
+    NTPSyncCounter = SEC_PER_MONTH;
+    RTCSyncCounter = SEC_PER_HOUR;
 
     while( 1 ) {
-    	if( NTPSyncCounter >= TICKS_PER_MONTH ) {
+    	if( NTPSyncCounter >= SEC_PER_MONTH ) {
     		//Sync RTC to NTP server pool once a month
     		NTPSyncSuccessful = syncSystemTimeNTP();
+    		
     		//Only change the RTC if the system time is accurate
-    		NTPSyncCounter = 0;
-    		if( NTPSyncSuccessful ) RTCFromSystemSetSuccessful = RTCSetRTCfromSystemTime();
-    		//If NTP sync fails, try again in 10 sec
-    		else NTPSyncCounter = TICKS_PER_MONTH - 10;
+    		if( NTPSyncSuccessful ) {
+    			NTPSyncCounter = 0;
+    			RTCFromSystemSetSuccessful = RTCSetRTCfromSystemTime();
+    		}
+    		else {
+    			//If NTP sync fails, try again in 10 sec
+    			NTPSyncCounter = SEC_PER_MONTH - 10;
+    		}
     	}
-    	if( RTCSyncCounter >= TICKS_PER_HOUR ) {
+    	if( RTCSyncCounter >= SEC_PER_HOUR ) {
     		//Once an hour, sync the system time to the RTC
-    		SystemFromRTCSetSuccessful = RTCSetSystemFromRTCTime();
+    		tzsetchar("GMT0");
+    		//Set the system time from the Real-Time Clock
+    		SystemFromRTCSetFailure = RTCSetSystemFromRTCTime();
+    		if( lastTimeZoneSet != NULL ) {
+    			tzsetchar(lastTimeZoneSet);
+    		}
+    		//iprintf("TZ var: %s\r\n",lastTimeZoneSet);
     		RTCSyncCounter = 0;
     		//If RTC sync fails, try again in 10 sec
-    		if( SystemFromRTCSetSuccessful ) RTCSyncCounter = TICKS_PER_HOUR - 10;
+    		if( SystemFromRTCSetFailure ) {
+    			RTCSyncCounter = SEC_PER_HOUR - 10;
+    		}
     	}
+    	/*
+    	 * Sleep for one second - loop runs approx. every second. Can
+    	 * divide this by two to update twice every second, multiply by two
+    	 * to update every two seconds, etc.
+    	 */
     	OSTimeDly(TICKS_PER_SECOND);
     	/*
     	 * If setting of RTC and system time from NTP pool is successful,
     	 * update HTML time variable and check for time match
     	 */
-    	if( NTPSyncSuccessful && RTCFromSystemSetSuccessful == 0 ) {
+    	if( NTPSyncSuccessful && !RTCFromSystemSetSuccessful ) {
     		sysTimeOutOfSync = FALSE;
     	}
-    	else sysTimeOutOfSync = TRUE;
+    	else {
+    		sysTimeOutOfSync = TRUE;
+    	}
 
-//    	iprintf("Local: %s\r\n", asctime(&currentSysTimeStructLocal));
-//    	iprintf("GMT: %s\r\n\n", asctime(gmtime(&currentSysTime)));
-
-    	currentSysTime = time(0);
+    	//Set currentSysTime variable to the system's time
+    	time(&currentSysTime);
+    	//Convert to local timezone
     	currentSysTimeStructLocal = *localtime(&currentSysTime);
+
     	struct tm * sys = &currentSysTimeStructLocal;
     	struct tm * s = &currentStartTimeStruct;
     	struct tm * e = &currentEndTimeStruct;
 
-    	//IF( system time >= start time)
+    	//IF( system time >= start time )
     	if( timeObjEval(sys,s) == GREATER_THAN || timeObjEval(sys,s) == EQUAL_TO ) {
     		//IF ( system time < end time )
     		if( timeObjEval(sys,e) == LESS_THAN ) {
-    			//If the strip was off, turn it on (prevents
-    			//re-writing the strip every second)
-    			if( LEDsPowered == FALSE ) {
-    				strip->setStripWhite();
-    				strip->writeLedStrip();
-    			}
-    			LEDsPowered = TRUE;
+    			LEDCurrentState = ACTIVE;
     		}
+    		//IF( system time >= end time )
     		else {
-    			//If the strip was on, and we're out of the
-    			//time window, turn it off
-    			if( LEDsPowered == TRUE ) strip->turnStripOff();
-    			LEDsPowered = FALSE;
+    			LEDCurrentState = INACTIVE;
+    		}
+    	}
+    	//IF( system time < start time )
+    	else {
+    		LEDCurrentState = INACTIVE;
+    	}
+
+    	/*
+    	 * This is to prevent the strip from rewriting colors
+    	 * every second; it will only write upon a change
+    	 * of state.
+    	 */
+    	if( LEDCurrentState == ACTIVE ) {
+    		//Turn LEDs ON
+    		if( LEDPreviousState == INACTIVE ) {
+    			strip->setStripWhite();
+    			strip->updateLedStrip();
     		}
     	}
     	else {
-    		//If the strip was on, and we're out of the
-    		//time window, turn it off
-    		if( LEDsPowered == TRUE ) strip->turnStripOff();
-    		LEDsPowered = FALSE;
+    		//Turn LEDs OFF
+    		if( LEDPreviousState == ACTIVE ) {
+    			strip->turnStripOff();
+    			strip->updateLedStrip();
+    		}
     	}
+
+    	LEDPreviousState = LEDCurrentState;
+
     	NTPSyncCounter++;
     	RTCSyncCounter++;
     }

@@ -21,33 +21,33 @@
 * San Diego, CA 92121
 * www.netburner.com
 ******************************************************************************/
-#ifndef LEDSTRIP_H_
-#define LEDSTRIP_H_
 
-#include <basictypes.h>
+/********************************************************
+ * This header file establishes which functions
+ * index.htm needs to have access to. Nearly all
+ * of said functions relate to retrieving ASCII
+ * strings of updated data.
+ ********************************************************/
+#ifndef HTMLVARS_H_
+#define HTMLVARS_H_
 
-#include "led.h"
+#include <constants.h>
+#include <system.h>
+#include <startnet.h>
+#include <time.h>
 
-const int ledCount = 64;
+char* getCurSysTimeASCII(int fd);
 
-class LedStrip {
-public:
-	LedStrip();
-	~LedStrip();
-	static LedStrip * GetLedStrip();
-	void WriteToDSPI(PBYTE bytePtr, int numBytes);
-	BOOL initLedStrip();
-	void setStripColor(uint8_t r, uint8_t g, uint8_t b);
-	void setStripWhite();
-	void modifyStripBrightness(uint8_t brightPercent);
-	void setLedValue(int i, uint8_t r, uint8_t g, uint8_t b);
-	void updateLedStrip();
-	void turnStripOff();
+char* getCurStartTimeASCII(int fd);
 
-private:
-	uint8_t clearBytes[2];
-	Led ledStrip[ledCount];
-	static LedStrip *currentStripSPI;
-};
+char* getCurEndTimeASCII(int fd);
 
-#endif /* LEDSTRIP_H_ */
+char* getCurTimeZoneASCII(int fd);
+
+char* SerializeClockData(int fd);
+
+void setCurStartTime(int fd, int hours, int min, int ampm);
+
+void setCurEndTime(int fd, int hours, int min, int ampm);
+
+#endif /*HTMLVARS_H_*/
