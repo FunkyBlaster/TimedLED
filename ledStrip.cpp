@@ -31,7 +31,7 @@
 #include <pins.h>
 #include <pinconstant.h>
 #include <stdio.h>
-#include <cstring>
+#include <string.h>
 #include "ledStrip.h"
 
 extern "C" {
