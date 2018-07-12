@@ -51,7 +51,7 @@
 #define LESS_THAN 1
 #define EQUAL_TO 2
 #define GREATER_THAN 3
-#define SEC_PER_MONTH 2592000
+#define SEC_PER_WEEK 604800
 #define SEC_PER_HOUR 3600
 #define ACTIVE 1
 #define INACTIVE 0
@@ -70,6 +70,7 @@ const char syncBuf[21] = " (Time Sync Failed)\0";
 
 //UserMain() ticks every ~1s
 int NTPSyncCounter;
+int NTPSyncFailCount;
 int RTCSyncCounter;
 BOOL sysTimeOutOfSync;
 BOOL NTPSyncSuccessful;
@@ -97,7 +98,7 @@ char * getCurSysTimeASCII(int fd) {
 	 * format and return pointer to buffer
 	 */
 	memset(&timeBuf, 0, 80);
-	strftime(timeBuf,80,"%I:%M %p",&currentSysTimeStructLocal);
+	strftime(timeBuf,80,"%I:%M:%S %p",&currentSysTimeStructLocal);
 	// 02:35 -> 2:35
 	if(timeBuf[0] == '0') {
 		for(int i = 0; i < 79; i++) {
@@ -203,12 +204,14 @@ void setCurStartTime(int hours, int min, int ampm) {
 		 * increment end time by one minute
 		 */
 		struct tm * end = &currentEndTimeStruct;
+		struct tm * start = &currentStartTimeStruct;
 		if( hours == end->tm_hour ) {
 			if( min == end->tm_min ) {
 				if( min != 59 ) end->tm_min++;
 				else if( hours != 23 ) {
 					end->tm_hour++;
 					end->tm_min = 0;
+					end->tm_mday = 0;
 				}
 				else {
 					end->tm_hour = 0;
@@ -216,14 +219,19 @@ void setCurStartTime(int hours, int min, int ampm) {
 				}
 			}
 		}
-		currentStartTimeStruct.tm_hour = hours;
-		currentStartTimeStruct.tm_min = min;
-		currentStartTimeStruct.tm_sec   = 0;
-		currentStartTimeStruct.tm_mday  = 0;
-		currentStartTimeStruct.tm_year  = 0;
-		currentStartTimeStruct.tm_yday  = 0;
+		start->tm_hour = hours;
+		start->tm_min = min;
+		start->tm_sec   = 0;
+		start->tm_mday  = 0;
+		start->tm_year  = 0;
+		start->tm_yday  = 0;
 		if( hours > end->tm_hour ) {
 			end->tm_mday = 1;
+		}
+		else if( hours == end->tm_hour ) {
+			if( min > end->tm_min ) {
+				end->tm_mday = 1;
+			}
 		}
 	}
 }
@@ -252,12 +260,14 @@ void setCurEndTime(int hours, int min, int ampm) {
 		 * increment end time by one minute
 		 */
 		struct tm * start = &currentStartTimeStruct;
+		struct tm * end = &currentEndTimeStruct;
 		if( hours == start->tm_hour ) {
 			if( min == start->tm_min ) {
 				if( min != 59 ) min++;
 				else if( hours != 23 ) {
 					hours++;
 					min = 0;
+					end->tm_mday = 0;
 				}
 				else {
 					hours = 0;
@@ -265,14 +275,19 @@ void setCurEndTime(int hours, int min, int ampm) {
 				}
 			}
 		}
-		currentEndTimeStruct.tm_hour = hours;
-		currentEndTimeStruct.tm_min = min;
-		currentEndTimeStruct.tm_sec  = 0;
-		currentEndTimeStruct.tm_mday = 0;
-		currentEndTimeStruct.tm_year = 0;
-		currentEndTimeStruct.tm_yday = 0;
+		end->tm_hour = hours;
+		end->tm_min = min;
+		end->tm_sec  = 0;
+		end->tm_mday = 0;
+		end->tm_year = 0;
+		end->tm_yday = 0;
 		if( hours < start->tm_hour ) {
-			currentEndTimeStruct.tm_mday = 1;
+			end->tm_mday = 1;
+		}
+		else if( hours == start->tm_hour ) {
+			if(min < start->tm_min) {
+				end->tm_mday = 1;
+			}
 		}
 	}
 }
@@ -337,15 +352,18 @@ int timeObjEval(struct tm * one, struct tm * two) {
 	int twoHour = two->tm_hour;
 	int twoDay = two->tm_mday;
 	if( oneHour > twoHour ) {
-		if( twoDay == 1 ) return 1;
-		else return 3;
-	}
-	else if( oneHour < twoHour ) {
 		if( twoDay == 0 ) return 3;
 		else return 1;
 	}
+	else if( oneHour < twoHour ) {
+		if( twoDay == 0 ) return 1;
+		else return 3;
+	}
 	else if( oneHour == twoHour ) {
-		if( oneMin > twoMin ) return 3;
+		if( oneMin > twoMin ) {
+			if( twoDay == 0 ) return 3;
+			else return 1;
+		}
 		else if( oneMin < twoMin ) return 1;
 		else return 2;
 	}
@@ -371,27 +389,32 @@ void UserMain(void * pd) {
     BOOL LEDPreviousState = INACTIVE;
 
     //Initialize all of the time variables to non-null values
-    //swapped gmtime and localtime
     currentSysTimeStructLocal = *gmtime(&currentSysTime);
     currentStartTimeStruct = *gmtime(&currentSysTime);
     currentEndTimeStruct = *gmtime(&currentSysTime);
 
-    NTPSyncCounter = SEC_PER_MONTH;
+    NTPSyncCounter = SEC_PER_WEEK;
+    NTPSyncFailCount = 0;
     RTCSyncCounter = SEC_PER_HOUR;
 
     while( 1 ) {
-    	if( NTPSyncCounter >= SEC_PER_MONTH ) {
+    	if( NTPSyncCounter >= SEC_PER_WEEK ) {
     		//Sync RTC to NTP server pool once a month
     		NTPSyncSuccessful = syncSystemTimeNTP();
     		
     		//Only change the RTC if the system time is accurate
     		if( NTPSyncSuccessful ) {
     			NTPSyncCounter = 0;
+    			NTPSyncFailCount = 0;
     			RTCFromSystemSetSuccessful = RTCSetRTCfromSystemTime();
     		}
     		else {
-    			//If NTP sync fails, try again in 10 sec
-    			NTPSyncCounter = SEC_PER_MONTH - 10;
+    			//If NTP fails 5 times in a row, stop trying to resync until scheduled sync
+    			if( NTPSyncFailCount < 5 ) {
+    				//If NTP sync fails, try again in 10 sec
+    				NTPSyncCounter = SEC_PER_WEEK - 10;
+    				NTPSyncFailCount++;
+    			}
     		}
     	}
     	if( RTCSyncCounter >= SEC_PER_HOUR ) {
@@ -434,6 +457,10 @@ void UserMain(void * pd) {
     	struct tm * sys = &currentSysTimeStructLocal;
     	struct tm * s = &currentStartTimeStruct;
     	struct tm * e = &currentEndTimeStruct;
+
+//    	iprintf("System Time: %s\r\n",asctime(sys));
+//    	iprintf("Start Time: %s\r\n",asctime(s));
+//    	iprintf("End Time: %s\r\n--------------------------------------\r\n",asctime(e));
 
     	//IF( system time >= start time )
     	if( timeObjEval(sys,s) == GREATER_THAN || timeObjEval(sys,s) == EQUAL_TO ) {
